@@ -1,0 +1,16 @@
+name = "prunt_board_2_server"
+description = "Server software for Prunt Board 1"
+version = "0.1.0-dev"
+
+authors = ["Liam Powell"]
+maintainers = ["Liam Powell <liam@liampll.com>"]
+maintainers-logins = ["liampwll"]
+executables = ["prunt_board_2_server"]
+[[depends-on]]
+prunt = "*"
+[[pins]]
+prunt = { path = "../prunt" }
+
+[build-switches]
+release.optimization = ["-O3", "-gnatn", "-fdata-sections", "-ffunction-sections", "-flto=auto", "-fuse-linker-plugin", "-ffat-lto-objects"]
+development.contracts = "Yes"

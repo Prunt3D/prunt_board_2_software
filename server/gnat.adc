@@ -1,0 +1,2 @@
+pragma Warnings (Off, "array aggregate using () is an obsolescent syntax, use [] instead");
+pragma Unsuppress (Discriminant_Check);
