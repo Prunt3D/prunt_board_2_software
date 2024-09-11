@@ -1,0 +1,2 @@
+pragma Partition_Elaboration_Policy (Sequential);
+pragma Warnings (Off, "array aggregate using () is an obsolescent syntax, use [] instead");

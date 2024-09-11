@@ -1,0 +1,37 @@
+* Building
+When first building or when updating the board support libraries:
+#+begin_src shell
+bash -c 'cd board_support/bb-runtimes/ && ./runtimes.sh'
+#+end_src
+
+** Regular Build
+#+begin_src shell
+alr clean # When switching between debug and release
+alr build && alr exec -- arm-none-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin
+#+end_src
+
+** Production Build
+#+begin_src shell
+alr clean # When switching between debug and release
+ADL_BUILD=Production alr build && alr exec -- arm-none-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin
+#+end_src
+
+* Flashing
+#+begin_src shell
+stm32flash -w ./bin/prunt_board_2_firmware.bin -v /dev/serial/by-id/usb-Prunt_Prunt_Board_2_...
+#+end_src
+
+* STTY For Debugging
+#+begin_src shell
+stty -F /dev/serial/by-id/usb-Prunt_Prunt_Board_2_... 3000000 cs8 -cstopb -parenb raw
+#+end_src
+
+* Stack Usage Analysis
+#+begin_src shell
+alr exec -- python3 ./stack_usage.py ./bin/prunt_board_2_firmware.elf ./obj/development/ <FUNCTION NAME> | tail -1
+#+end_src
+
+** Procedures to Check
+- =_start_rom=
+- =thermistors__adc_handler__end_of_sequence_handlerP=
+- =step_generator__timer_reload_handler__master_update_handlerP=

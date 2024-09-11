@@ -1,0 +1,13 @@
+name = "prunt_board_2_firmware"
+description = ""
+version = "0.1.0-dev"
+
+authors = ["Liam Powell"]
+maintainers = ["Liam Powell <liam@liampll.com>"]
+maintainers-logins = ["liampwll"]
+licenses = "GPL-3.0-or-later"
+website = ""
+tags = []
+
+[[depends-on]]
+gnat_arm_elf = "^14.1.3"

@@ -1,0 +1,8 @@
+/obj/
+/bin/
+/alire/
+/config/
+/.dir-locals.el
+stack_usage.csv
+parsetab.py
+parser.out
