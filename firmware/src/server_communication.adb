@@ -31,7 +31,7 @@ package body Server_Communication is
       Set_Oversampling_Mode (Comms_UART, Oversampling_By_16);
       Set_Stop_Bits (Comms_UART, Stopbits_1);
       Set_Flow_Control (Comms_UART, No_Flow_Control);
-      Set_Baud_Rate (Comms_UART, 3_000_000);
+      Set_Baud_Rate (Comms_UART, 6_000_000);
       Enable (Comms_UART);
       --  stty -F /dev/... cs8 -cstopb -parenb raw
 
