@@ -287,6 +287,10 @@ package body Server_Communication is
             for Switch in Input_Switch_Name loop
                TX_Message.Content.Switches (Switch) := Input_Switches.Get_State (Switch);
             end loop;
+
+            for Fan in Fan_Name loop
+               TX_Message.Content.Tachs (Fan) := Fans.Get_Tach_Counter (Fan);
+            end loop;
          end loop;
 
          Start_Transfer

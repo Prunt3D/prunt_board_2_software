@@ -7,7 +7,9 @@ with STM32.Device;         use STM32.Device;
 with STM32;                use STM32;
 with STM32.CRC;            use STM32.CRC;
 with STM32.Timers;         use STM32.Timers;
+with STM32.LPTimers;       use STM32.LPTimers;
 with STM32.ADC;            use STM32.ADC;
+with STM32.COMP;           use STM32.COMP;
 with STM32_SVD;
 with STM32_SVD.USART;
 with STM32_SVD.ADC;
@@ -117,11 +119,36 @@ package Hardware_Configuration is
    Fan_Timer_Complementary : constant array (Fan_Name) of Boolean                       :=
      (Fan_1 => False, Fan_2 => False, Fan_3 => True, Fan_4 => False);
    Fan_Timer_Polarities    : constant array (Fan_Name) of Timer_Output_Compare_Polarity :=
-     (Fan_1 => High, Fan_2 => High, Fan_3 => Low, Fan_4 => High);
+     (Fan_1 => Low, Fan_2 => Low, Fan_3 => High, Fan_4 => Low);
    Fan_GPIO_Points         : constant array (Fan_Name) of GPIO_Point                    :=
      (Fan_1 => PB10, Fan_2 => PB2, Fan_3 => PA1, Fan_4 => PB9);
    Fan_GPIO_AFs            : constant array (Fan_Name) of GPIO_Alternate_Function       :=
      (Fan_1 => GPIO_AF_TIM2_1, Fan_2 => GPIO_AF_TIM20_3, Fan_3 => GPIO_AF_TIM15_9, Fan_4 => GPIO_AF_TIM17_1);
+
+   type Tach_Config_Kind is (Timer_Kind, LPTimer_Kind);
+
+   type Tach_Config (Kind : Tach_Config_Kind := Timer_Kind) is record
+      Point : GPIO_Point;
+      Comp  : access Comparator;
+      case Kind is
+         when Timer_Kind =>
+            Tim     : access Timer;
+            Trigger : Timer_External_Trigger_Source;
+         when LPTimer_Kind =>
+            LPTim : access LPTimer;
+            Clock : LPTimer_Input_Clock_Enum;
+      end case;
+   end record;
+
+   Tach_Configs : constant array (Fan_Name) of Tach_Config :=
+     (Fan_1 =>
+        (Kind => Timer_Kind, Point => PA7, Comp => Comp_2'Access, Tim => Timer_1'Access, Trigger => Comp_2_Output),
+      Fan_2 =>
+        (Kind => LPTimer_Kind, Point => PB1, Comp => Comp_1'Access, LPTim => LPTimer_1'Access, Clock => Option_1),
+      Fan_3 =>
+        (Kind => Timer_Kind, Point => PB0, Comp => Comp_4'Access, Tim => Timer_3'Access, Trigger => Comp_4_Output),
+      Fan_4 =>
+        (Kind => Timer_Kind, Point => PA0, Comp => Comp_3'Access, Tim => Timer_5'Access, Trigger => Comp_3_Output));
 
    --  Change the below client ID if you are porting this code to a new board. The following command may be used to
    --  generate a random ID:
