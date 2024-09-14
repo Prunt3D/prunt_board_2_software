@@ -14,7 +14,7 @@ package body Fans is
          if Advanced_Timer (Tim) then
             Enable_Main_Output (Tim);
          end if;
-         Configure (This => Tim, Prescaler => 74, Period => 0); --  33.33 Hz
+         Configure (This => Tim, Prescaler => 74, Period => 60_000); --  33.33 Hz
          Configure_Channel_Output
            (This => Tim, Channel => Channel, Mode => PWM1, State => Enable, Pulse => 0, Polarity => Polarity);
          Enable (Tim);
