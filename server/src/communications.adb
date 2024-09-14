@@ -162,6 +162,10 @@ package body Communications is
             Report_Input_Switch_State (S, Reply.Content.Switches (S));
          end loop;
 
+         for F in Fan_Name loop
+            Ada.Text_IO.Put_Line (F'Image & Reply.Content.Tachs (F)'Image);
+         end loop;
+
          Last_Received_Index := @ + 1;
       end Send_And_Handle_Reply;
 
