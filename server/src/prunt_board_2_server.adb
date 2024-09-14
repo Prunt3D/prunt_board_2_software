@@ -77,8 +77,10 @@ procedure Prunt_Board_2_Server is
 
    procedure Report_Input_Swtich_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State);
 
+   pragma Warnings (Off, "cannot call * before body seen");
    package My_Communications is new Communications
      (Report_Error, Report_Temperature, Report_Heater_Power, Report_Input_Swtich_State);
+   pragma Warnings (On, "cannot call * before body seen");
 
    function Sort_Curve_By_ADC_Value_Comparator (Left, Right : Thermistor_Point) return Boolean is
    begin
