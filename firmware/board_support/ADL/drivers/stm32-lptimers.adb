@@ -92,20 +92,6 @@ package body STM32.LPTimers is
       return This.ARR.ARR;
    end Current_Autoreload;
 
-   ---------------
-   -- Configure --
-   ---------------
-
-   procedure Configure
-     (This      : in out LPTimer;
-      Prescaler : LPTimer_Prescaler;
-      Period    : UInt16)
-   is
-   begin
-      This.CFGR.PRESC := Prescaler'Enum_Rep;
-      This.ARR.ARR := Period;
-   end Configure;
-
    ----------------------------------
    -- Compute_Prescaler_and_Period --
    ----------------------------------

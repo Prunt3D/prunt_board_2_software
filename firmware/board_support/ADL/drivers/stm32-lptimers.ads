@@ -38,26 +38,18 @@ package STM32.LPTimers is
    procedure Set_Compare_Value
      (This  : in out LPTimer;
       Value : UInt16)
-     with
-       Post => Current_Compare_Value (This) = Value;
+     with Pre => Enabled (This),
+          Post => Current_Compare_Value (This) = Value;
 
    function Current_Compare_Value (This : LPTimer) return UInt16;
 
    procedure Set_Autoreload_Value
      (This  : in out LPTimer;
       Value : UInt16)
-     with
-       Post => Current_Autoreload (This) = Value;
+     with Pre => Enabled (This),
+          Post => Current_Autoreload (This) = Value;
 
    function Current_Autoreload (This : LPTimer) return UInt16;
-
-   procedure Configure
-     (This      : in out LPTimer;
-      Prescaler : LPTimer_Prescaler;
-      Period    : UInt16)
-     with Pre => not Enabled (This),
-          Post => Current_Prescaler (This) = Prescaler and
-                  Current_Autoreload (This) = Period;
 
    procedure Compute_Prescaler_And_Period
      (This                : LPTimer;
@@ -120,19 +112,22 @@ package STM32.LPTimers is
    procedure Enable_Interrupt
      (This   : in out LPTimer;
       Source : LPTimer_Interrupt)
-     with Post => Interrupt_Enabled (This, Source);
+     with Pre => not Enabled (This),
+          Post => Interrupt_Enabled (This, Source);
 
    type LPTimer_Interrupt_List is array (Positive range <>) of LPTimer_Interrupt;
 
    procedure Enable_Interrupt
      (This    : in out LPTimer;
       Sources : LPTimer_Interrupt_List)
-     with Post => (for all Source of Sources => Interrupt_Enabled (This, Source));
+     with Pre => not Enabled (This),
+          Post => (for all Source of Sources => Interrupt_Enabled (This, Source));
 
    procedure Disable_Interrupt
      (This   : in out LPTimer;
       Source : LPTimer_Interrupt)
-     with Post => not Interrupt_Enabled (This, Source);
+     with Pre => not Enabled (This),
+          Post => not Interrupt_Enabled (This, Source);
 
    procedure Clear_Pending_Interrupt
      (This   : in out LPTimer;
@@ -152,7 +147,8 @@ package STM32.LPTimers is
 
    procedure Select_Clock_Source
      (This   : in out LPTimer;
-      Source : LPTimer_Clock_Source);
+      Source : LPTimer_Clock_Source)
+     with Pre => not Enabled (This);
    --  LPTIM is clocked by internal clock source (APB clock or any of the
    --  embedded oscillators) or by an external clock source through the LPTIM
    --  external Input1.
@@ -181,7 +177,8 @@ package STM32.LPTimers is
    procedure Configure_External_Clock
      (This     : in out LPTimer;
       Polarity : LPTimer_External_Clock_Polarity;
-      Filter   : LPTimer_Digital_Filter);
+      Filter   : LPTimer_Digital_Filter)
+     with Pre => not Enabled (This);
 
    type LPTimer_Input_Clock_Enum is
      (Option_1,
@@ -190,10 +187,10 @@ package STM32.LPTimers is
       Option_4)
      with Size => 2;
    --  Option       Input 1        Input 2
-   --  1            COMP2          COMP1
-   --  2            COMP4          COMP3
-   --  3            COMP6          COMP5
-   --  4            COMP6          COMP7
+   --  1            COMP1          COMP2
+   --  2            COMP3          COMP4
+   --  3            COMP5          COMP6
+   --  4            COMP7          COMP6
    --  See RM0440 rev 6 Chapter 32.4.2 "LPTIM input and trigger mapping".
 
    type LPTimer_Input_Clock is record
@@ -238,11 +235,13 @@ package STM32.LPTimers is
 
    procedure Select_Trigger_Source
      (This   : in out LPTimer;
-      Source : LPTimer_Trigger_Source);
+      Source : LPTimer_Trigger_Source)
+     with Pre => not Enabled (This);
 
    procedure Select_Trigger_Filter
      (This   : in out LPTimer;
-      Filter : LPTimer_Digital_Filter);
+      Filter : LPTimer_Digital_Filter)
+     with Pre => not Enabled (This);
 
    procedure Set_Trigger_Timeout
      (This : in out LPTimer;
@@ -255,7 +254,8 @@ package STM32.LPTimers is
      (This    : in out LPTimer;
       Source  : LPTimer_Trigger_Source;
       Filter  : LPTimer_Digital_Filter;
-      Timeout : Boolean);
+      Timeout : Boolean)
+     with Pre => not Enabled (This);
 
    type LPTimer_Pulse_Mode is (Repetitive, Single);
 
