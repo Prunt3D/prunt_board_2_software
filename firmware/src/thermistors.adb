@@ -57,7 +57,7 @@ package body Thermistors is
            (This           => Thermistor_ADC,
             Mode           => Independent,
             Prescaler      => Div_1,
-            Clock_Mode     => PCLK2_Div_4,
+            Clock_Mode     => PCLK2_Div_1,
             DMA_Mode       => Disabled,
             Sampling_Delay => Sampling_Delay_5_Cycles);
 
@@ -195,20 +195,37 @@ package body Thermistors is
          Start_Conversion;
 
          for Thermistor in Thermistor_Name loop
-            Last_Temperatures (Thermistor) := Interpolate (ADC_Results (Thermistor), Thermistor);
+            Accumulators (Thermistor) := @ + Accumulator_Type (ADC_Results (Thermistor));
          end loop;
 
-         --  We only raise an exception if a bad thermistor reading is to be used for a heater.
-         for Heater in Heater_Name loop
-            if Last_Temperatures (Heater_Thermistors (Heater)) = Bad_Reading_Indicator then
-               raise Bad_Reading_Error
-                 with "Thermistor reading out of range for " & Heater_Thermistors (Heater)'Image;
-            end if;
-         end loop;
+         if Step = Accumulator_Step'Last then
+            for Thermistor in Thermistor_Name loop
+               Last_Temperatures (Thermistor) :=
+                 Interpolate
+                   (ADC_Value
+                      (Accumulator_Type
+                         (Accumulators (Thermistor) / Accumulator_Type (Accumulator_Step'Last))),
+                    Thermistor);
+            end loop;
 
-         for Heater in Heater_Name loop
-            Heaters.Update_Reading (Heater, Last_Temperatures (Heater_Thermistors (Heater)));
-         end loop;
+            --  We only raise an exception if a bad thermistor reading is to be used for a heater.
+            for Heater in Heater_Name loop
+               if Last_Temperatures (Heater_Thermistors (Heater)) = Bad_Reading_Indicator then
+                  raise Bad_Reading_Error
+                    with "Thermistor reading out of range for " & Heater_Thermistors (Heater)'Image;
+               end if;
+            end loop;
+
+            for Heater in Heater_Name loop
+               Heaters.Update_Reading (Heater, Last_Temperatures (Heater_Thermistors (Heater)));
+            end loop;
+
+            Accumulators := (others => 0);
+
+            Step := Accumulator_Step'First;
+         else
+            Step := @ + 1;
+         end if;
       exception
          when E : others =>
             Last_Chance_Handler.Last_Chance_Handler (E);

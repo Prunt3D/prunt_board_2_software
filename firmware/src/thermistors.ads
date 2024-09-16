@@ -4,11 +4,12 @@ with Physical_Types;         use Physical_Types;
 
 package Thermistors is
 
-   Loop_Frequency : constant Frequency := (150_000_000.0 / 4.0) * hertz / (256.0 * 4.0 * 640.5);
-   --  150/4 = ADC clock frequency.
+   Loop_Frequency : constant Frequency := 150_000_000.0 * hertz / (256.0 * 4.0 * 640.5 * 32.0);
+   --  150 = ADC clock frequency.
    --  256 = Oversampling.
    --  4 = Thermistor count.
    --  640.5 = Sample time.
+   --  32 = Software oversampling.
    --  This probably is a bit off, I have not checked exactly how the ADC timings work.
 
    procedure Init;
@@ -40,6 +41,10 @@ private
    type Float_Thermistor_Curve is array (Thermistor_Curve_Index) of Float_Thermistor_Point;
    type Float_Thermistor_Curves_Array is array (Thermistor_Name) of Float_Thermistor_Curve;
 
+   type Accumulator_Step is range 1 .. 32;
+   type Accumulator_Type is range 0 .. Accumulator_Step'Last * 2**16 - 1;
+   type Accumulator_Array_Type is array (Thermistor_Name) of Accumulator_Type;
+
    protected ADC_Handler with
      Linker_Section => ".ccmbss.thermistor_curves", Interrupt_Priority => Thermistor_DMA_Interrupt_Priority
    is
@@ -54,6 +59,8 @@ private
       Init_Done          : Boolean                     := False;
       ISR_Loop_Started   : Boolean                     := False;
       Setup_Done         : Boolean                     := False;
+      Accumulators       : Accumulator_Array_Type      := (others => 0);
+      Step               : Accumulator_Step            := Accumulator_Step'First;
 
       function Interpolate (ADC_Val : ADC_Value; Thermistor : Thermistor_Name) return Temperature;
       procedure Start_Conversion;
