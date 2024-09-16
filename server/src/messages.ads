@@ -46,8 +46,8 @@ package Messages is
    type Input_Switch_State is (Low, High) with
      Size => 8;
 
-   type ADC_Value is mod 2**16 with
-     Size => 16;
+   type ADC_Value is mod 2**24 with
+     Size => 24;
 
    type Fixed_Point_PWM_Scale is delta 2.0**(-14) range 0.0 .. 1.0 with
      Size => 16;
@@ -97,8 +97,8 @@ package Messages is
      --  type Heater_Kind is (Disabled_Kind, PID_Kind, Bang_Bang_Kind, PID_Autotune_Kind, MPC_Kind, MPC_Autotune_Kind) with
      --    Size => 8;
 
-   type Fixed_Point_Celcius is delta 2.0**(-5) range -1_000.0 .. 1_000.0 with
-     Size => 16;
+   type Fixed_Point_Celcius is delta 2.0**(-13) range -1_000.0 .. 1_000.0 with
+     Size => 24;
 
    type Fixed_Point_Seconds is delta 2.0**(-5) range 0.0 .. 2_000.0 with
      Size => 16;
@@ -167,34 +167,33 @@ package Messages is
             --     Cooling_Fan                    : Fan_Name;
       end case;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 192;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 288;
 
-     --  TODO: Regenerate this.
    for Heater_Parameters use record
       Kind                       at  0 range 0 ..  7;
-      Check_Max_Cumulative_Error at  2 range 0 .. 15;
-      Check_Gain_Time            at  4 range 0 .. 15;
-      Check_Minimum_Gain         at  6 range 0 .. 15;
-      Check_Hysteresis           at  8 range 0 .. 15;
-      Bang_Bang_Hysteresis       at 12 range 0 .. 15;
-      Proportional_Scale         at 12 range 0 .. 31;
-      Integral_Scale             at 16 range 0 .. 31;
-      Derivative_Scale           at 20 range 0 .. 31;
-      Max_Cycles                 at 12 range 0 .. 15;
-      PID_Tuning_Temperature     at 14 range 0 .. 15;
-      Proportional_Tuning_Factor at 16 range 0 .. 31;
-      Derivative_Tuning_Factor   at 20 range 0 .. 31;
+      Check_Max_Cumulative_Error at  4 range 0 .. 31;
+      Check_Gain_Time            at  8 range 0 .. 15;
+      Check_Minimum_Gain         at 12 range 0 .. 31;
+      Check_Hysteresis           at 16 range 0 .. 31;
+      Bang_Bang_Hysteresis       at 20 range 0 .. 31;
+      Proportional_Scale         at 20 range 0 .. 31;
+      Integral_Scale             at 24 range 0 .. 31;
+      Derivative_Scale           at 28 range 0 .. 31;
+      Max_Cycles                 at 20 range 0 .. 15;
+      PID_Tuning_Temperature     at 24 range 0 .. 31;
+      Proportional_Tuning_Factor at 28 range 0 .. 31;
+      Derivative_Tuning_Factor   at 32 range 0 .. 31;
    end record;
 
    type Thermistor_Point is record
       Temp  : Fixed_Point_Celcius;
       Value : ADC_Value;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 48;
 
    for Thermistor_Point use record
-      Temp  at 0 range 0 .. 31;
-      Value at 4 range 0 .. 15;
+      Temp  at 0 range 0 .. 23;
+      Value at 3 range 0 .. 23;
    end record;
 
    type Thermistor_Curve_Index is range 1 .. 512;
@@ -276,7 +275,7 @@ package Messages is
             null;
       end case;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 98_560;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 98_624;
 
    for Message_From_Server_Content use record
       Kind                  at  0 range 0 ..      7;
@@ -284,14 +283,14 @@ package Messages is
       Heater_Thermistors    at 16 range 0 ..     15;
       Thermistor_Curves     at 18 range 0 .. 98_303;
       Heater                at 16 range 0 ..      7;
-      Heater_Params         at 20 range 0 ..    191;
+      Heater_Params         at 20 range 0 ..    287;
       Loop_Input_Switch     at 16 range 0 ..      7;
       Loop_Until_State      at 17 range 0 ..      7;
       Fan_Targets           at 16 range 0 ..     63;
-      Heater_Targets        at 24 range 0 ..     31;
-      Last_Index            at 28 range 0 ..     15;
-      Safe_Stop_After       at 30 range 0 ..      7;
-      Steps                 at 31 range 0 .. 98_303;
+      Heater_Targets        at 24 range 0 ..     63;
+      Last_Index            at 32 range 0 ..     15;
+      Safe_Stop_After       at 34 range 0 ..      7;
+      Steps                 at 35 range 0 .. 98_303;
       Conditon_Input_Switch at 16 range 0 ..      7;
       Skip_If_Hit_State     at 17 range 0 ..      7;
       TMC_Write_Data        at 16 range 0 ..     63;
@@ -304,12 +303,12 @@ package Messages is
       Checksum : CRC32;
       Content  : Message_From_Server_Content;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 3_082 * 32;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 3_084 * 32;
      --  Size should always be a multiple of 32 to allow for 32-bit CRC inputs on STM32.
 
    for Message_From_Server use record
       Checksum at 0 range 0 ..     31;
-      Content  at 8 range 0 .. 98_559;
+      Content  at 8 range 0 .. 98_623;
    end record;
 
    type Message_From_Client_Kind is (Hello_Kind, Status_Kind, TMC_Read_Reply_Kind, Check_Reply_Kind) with
@@ -334,32 +333,32 @@ package Messages is
             Condition_Met : Byte_Boolean;
       end case;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 576;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 640;
 
    for Message_From_Client_Content use record
       Kind               at  0 range 0 ..   7;
       Index              at  8 range 0 ..  63;
-      Temperatures       at 16 range 0 ..  63;
-      Heaters            at 24 range 0 ..  31;
-      Switches           at 28 range 0 ..  79;
-      Tachs              at 38 range 0 ..  63;
-      Version            at 48 range 0 ..  31;
-      ID                 at 52 range 0 .. 127;
-      TMC_Receive_Failed at 48 range 0 ..   7;
-      TMC_Data           at 49 range 0 ..  63;
-      Condition_Met      at 48 range 0 ..   7;
+      Temperatures       at 16 range 0 ..  95;
+      Heaters            at 32 range 0 ..  31;
+      Switches           at 36 range 0 ..  79;
+      Tachs              at 46 range 0 ..  63;
+      Version            at 56 range 0 ..  31;
+      ID                 at 60 range 0 .. 127;
+      TMC_Receive_Failed at 56 range 0 ..   7;
+      TMC_Data           at 57 range 0 ..  63;
+      Condition_Met      at 56 range 0 ..   7;
    end record;
 
    type Message_From_Client is record
       Checksum : CRC32;
       Content  : Message_From_Client_Content;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 20 * 32;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 22 * 32;
      --  Size should always be a multiple of 32 to allow for 32-bit CRC inputs on STM32.
 
    for Message_From_Client use record
       Checksum at 0 range 0 ..  31;
-      Content  at 8 range 0 .. 575;
+      Content  at 8 range 0 .. 639;
    end record;
 
 end Messages;
