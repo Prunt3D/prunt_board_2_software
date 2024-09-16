@@ -165,15 +165,14 @@ package body Thermistors is
             if ADC_Val >= Curve (Mid).Value and then ADC_Val <= Curve (Mid + 1).Value then
                exit;
             elsif ADC_Val < Curve (Mid).Value then
+               if Mid = Left then
+                  return Bad_Reading_Indicator;
+               end if;
                Right := Mid - 1;
             else
                Left := Mid + 1;
             end if;
          end loop;
-
-         if Left > Right then
-            return Bad_Reading_Indicator;
-         end if;
 
          declare
             Lower_Point : constant Float_Thermistor_Point := Curve (Mid);
