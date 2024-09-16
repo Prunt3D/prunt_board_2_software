@@ -22,7 +22,9 @@ private
 
    Bad_Reading_Indicator : constant Temperature := 1_000_000_000.0 * celcius;
 
-   type ADC_Results_Type is array (Thermistor_Name) of ADC_Value with
+   type ADC_16 is mod 2**16 with Size => 16;
+
+   type ADC_Results_Type is array (Thermistor_Name) of ADC_16 with
      Alignment => 2, Pack, Volatile, Volatile_Components;
    ADC_Results : aliased ADC_Results_Type;
 
