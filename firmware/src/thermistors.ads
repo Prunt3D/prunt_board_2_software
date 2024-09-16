@@ -4,13 +4,14 @@ with Physical_Types;         use Physical_Types;
 
 package Thermistors is
 
-   Loop_Frequency : constant Frequency := 150_000_000.0 * hertz / (256.0 * 4.0 * 640.5 * 32.0);
+   Loop_Frequency : constant Frequency := 150_000_000.0 * hertz / (256.0 * 4.0 * (640.5 + 12.5) * 32.0);
    --  150 = ADC clock frequency.
    --  256 = Oversampling.
    --  4 = Thermistor count.
    --  640.5 = Sample time.
+   --  12.5 = Successive approximation time.
    --  32 = Software oversampling.
-   --  This probably is a bit off, I have not checked exactly how the ADC timings work.
+   --  Not included: Time to restart after interrupt.
 
    procedure Init;
    procedure Setup (Thermistor_Curves : access Thermistor_Curves_Array; Heater_Map : Heater_Thermistor_Map);
