@@ -122,5 +122,10 @@ package Physical_Types is
        Dimension => (Symbol => "s/°C", Second => 1, Celcius => -1, others => 0);
    subtype Frequency_Over_Temperature is Dimensioned_Float with
        Dimension => (Symbol => "Hz/°C", Second => -1, Celcius => -1, others => 0);
+   subtype Temperature_Over_Time is Dimensioned_Float with
+       Dimension => (Symbol => "°C/s", Second => -1, Celcius => 1, others => 0);
+   subtype Lengthwise_Heat_Capacity is Dimensioned_Float with
+       Dimension =>
+        (Symbol => "J/(mm°C)", Volt => 1, Amp => 1, Second => 1, Celcius => -1, Millimeter => -1, others => 0);
 
 end Physical_Types;
