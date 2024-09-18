@@ -94,32 +94,11 @@ package Messages is
 
    type Heater_Kind is (Disabled_Kind, PID_Kind, Bang_Bang_Kind, PID_Autotune_Kind) with
      Size => 8;
-     --  type Heater_Kind is (Disabled_Kind, PID_Kind, Bang_Bang_Kind, PID_Autotune_Kind, MPC_Kind, MPC_Autotune_Kind) with
-     --    Size => 8;
 
    type Fixed_Point_Celcius is delta 2.0**(-13) range -1_000.0 .. 1_000.0 with
      Size => 24;
 
    type Fixed_Point_Seconds is delta 2.0**(-5) range 0.0 .. 2_000.0 with
-     Size => 16;
-
-   type Fixed_Point_Heat_Capacity is delta 2.0**(-2) range 0.0 .. 16_000.0 with
-     Size => 16;
-
-   type Fixed_Point_Thermal_Conductivity is delta 2.0**(-11) range 0.0 .. 31.0 with
-     Size => 16;
-
-   type Fixed_Point_Power is delta 2.0**(-6) range 0.0 .. 1_000.0 with
-     Size => 16;
-
-   type Fixed_Point_Smoothing_Factor is delta 2.0**(-15) range 0.0 .. 1.0 with
-     Size => 16;
-
-     --  TODO: Get some measurements and tune this to suit all heater setups.
-   type Fixed_Point_Frequency is delta 2.0**(-5) range 0.0 .. 2_000.0 with
-     Size => 16;
-
-   type Fixed_Point_Temperature_Over_Time is delta 2.0**(-9) range 0.0 .. 127.0 with
      Size => 16;
 
    type Heater_Target_List is array (Heater_Name) of Fixed_Point_Celcius with
@@ -150,21 +129,6 @@ package Messages is
             PID_Tuning_Temperature     : Fixed_Point_Celcius;
             Proportional_Tuning_Factor : Fixed_Point_PID_Parameter;
             Derivative_Tuning_Factor   : Fixed_Point_PID_Parameter;
-            --  when MPC_Kind =>
-            --     Block_Heat_Capacity            : Fixed_Point_Heat_Capacity;
-            --     Ambient_Transfer               : Fixed_Point_Thermal_Conductivity;
-            --     Full_Fan_Ambient_Transfer      : Fixed_Point_Thermal_Conductivity;
-            --     Target_Reach_Time              : Fixed_Point_Seconds;
-            --     Heater_Power                   : Fixed_Point_Power;
-            --     Smoothing                      : Fixed_Point_Smoothing_Factor;
-            --     Sensor_Responsiveness          : Fixed_Point_Frequency;
-            --     Min_Ambient_Change             : Fixed_Point_Temperature_Over_Time;
-            --     Steady_State_Rate              : Fixed_Point_Temperature_Over_Time;
-            --     Filament_Heat_Capacity         : Fixed_Point_Lengthwise_Heat_Capacity;
-            --     Extruder_Distance_Per_Step     : Fixed_Point_Length;
-            --     Extruder_Stepper               : Stepper_Name;
-            --     Extruder_Energy_Loss_Direction : Direction;
-            --     Cooling_Fan                    : Fan_Name;
       end case;
    end record with
      Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 288;
