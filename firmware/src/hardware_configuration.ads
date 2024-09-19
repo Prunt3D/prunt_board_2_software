@@ -152,7 +152,7 @@ package Hardware_Configuration is
 
    --  Change the below client ID if you are porting this code to a new board. The following command may be used to
    --  generate a random ID:
-   -- hexdump -vn32 -e '1/4 "16#" "%02X" "#, "' /dev/urandom && echo ""
+   --  hexdump -vn32 -e '1/4 "16#" "%02X" "#, "' /dev/urandom && echo ""
    DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE :
      constant Client_ID :=
      (16#14BC_80C3#, 16#53B1_4CAC#, 16#DE61_09E7#, 16#6BC8_2ECD#);

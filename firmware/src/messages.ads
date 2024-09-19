@@ -30,9 +30,9 @@ package Messages is
    type TMC2240_UART_Byte is mod 2**8 with
      Size => 8;
    type TMC2240_UART_Data_Byte_Array is array (1 .. 8) of TMC2240_UART_Byte with
-     Pack;
+     Size => 8 * 8, Component_Size => 8, Scalar_Storage_Order => System.Low_Order_First;
    type TMC2240_UART_Query_Byte_Array is array (1 .. 4) of TMC2240_UART_Byte with
-     Pack;
+     Size => 4 * 8, Component_Size => 8, Scalar_Storage_Order => System.Low_Order_First;
 
    type Client_Version is mod 2**32 with
      Size => 32;
@@ -41,7 +41,7 @@ package Messages is
      Size => 32;
 
    type Client_ID is array (1 .. 4) of Client_ID_Part with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 32 * 4, Component_Size => 32, Scalar_Storage_Order => System.Low_Order_First;
 
    type Input_Switch_State is (Low, High) with
      Size => 8;
@@ -50,7 +50,7 @@ package Messages is
      Size => 24;
 
    type Fixed_Point_PWM_Scale is delta 2.0**(-14) range 0.0 .. 1.0 with
-     Size => 16;
+     Size => 16, Small => 2.0**(-14);
 
    type CRC32 is mod 2**32 with
      Size => 32;
@@ -58,20 +58,20 @@ package Messages is
    type Message_Index is mod 2**64 with
      Size => 64;
 
-   type Step_Count is range 0 .. 100 with
+   type Step_Count is range 0 .. 127 with
      Size => 7;
 
-   type Step_Delta_List_Index is mod 2**11 with
+   type Step_Delta_List_Index is range 1 .. 2_045 with
      Size => 16;
 
    type Step_Delta_Steps is array (Stepper_Name) of Step_Count with
-     Scalar_Storage_Order => System.Low_Order_First, Component_Size => 7, Size => 42;
+     Size => 7 * 6, Component_Size => 7, Scalar_Storage_Order => System.Low_Order_First;
 
    type Direction is (Forward, Backward) with
      Size => 1;
 
    type Step_Delta_Dirs is array (Stepper_Name) of Direction with
-     Scalar_Storage_Order => System.Low_Order_First, Component_Size => 1, Size => 6;
+     Size => 6, Component_Size => 1, Scalar_Storage_Order => System.Low_Order_First;
 
    type Step_Delta is record
       Dirs  : Step_Delta_Dirs;
@@ -85,27 +85,28 @@ package Messages is
    end record;
 
    type Step_Delta_List is array (Step_Delta_List_Index) of Step_Delta with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 48 * 2_045, Component_Size => 48, Scalar_Storage_Order => System.Low_Order_First;
 
    type Fan_Target_List is array (Fan_Name) of Fixed_Point_PWM_Scale with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 16 * 4, Component_Size => 16, Scalar_Storage_Order => System.Low_Order_First;
 
-   type Heater_Thermistor_Map is array (Heater_Name) of Thermistor_Name;
+   type Heater_Thermistor_Map is array (Heater_Name) of Thermistor_Name with
+     Size => 8 * 2, Component_Size => 8, Scalar_Storage_Order => System.Low_Order_First;
 
    type Heater_Kind is (Disabled_Kind, PID_Kind, Bang_Bang_Kind, PID_Autotune_Kind) with
      Size => 8;
 
    type Fixed_Point_Celcius is delta 2.0**(-13) range -1_000.0 .. 1_000.0 with
-     Size => 24;
+     Size => 24, Small => 2.0**(-13);
 
    type Fixed_Point_Seconds is delta 2.0**(-5) range 0.0 .. 2_000.0 with
-     Size => 16;
+     Size => 16, Small => 2.0**(-5);
 
    type Heater_Target_List is array (Heater_Name) of Fixed_Point_Celcius with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 48, Component_Size => 24, Scalar_Storage_Order => System.Low_Order_First;
 
    type Fixed_Point_PID_Parameter is delta 2.0**(-18) range 0.0 .. 8_000.0 with
-     Size => 32;
+     Size => 32, Small => 2.0**(-18);
 
    type PID_Autotune_Cycle_Count is range 2 .. 1_000 with
      Size => 16;
@@ -163,25 +164,25 @@ package Messages is
    type Thermistor_Curve_Index is range 1 .. 512;
 
    type Thermistor_Curve is array (Thermistor_Curve_Index) of Thermistor_Point with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 48 * 512, Component_Size => 48, Scalar_Storage_Order => System.Low_Order_First;
 
    type Thermistor_Curves_Array is array (Thermistor_Name) of Thermistor_Curve with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 48 * 512 * 4, Component_Size => 48 * 512, Scalar_Storage_Order => System.Low_Order_First;
 
    type Reported_Temperatures is array (Thermistor_Name) of Fixed_Point_Celcius with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 24 * 4, Component_Size => 24, Scalar_Storage_Order => System.Low_Order_First;
 
    type Reported_Heater_PWMs is array (Heater_Name) of Fixed_Point_PWM_Scale with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 16 * 2, Component_Size => 16, Scalar_Storage_Order => System.Low_Order_First;
 
    type Reported_Switch_States is array (Input_Switch_Name) of Input_Switch_State with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 8 * 10, Component_Size => 8, Scalar_Storage_Order => System.Low_Order_First;
 
    type Tach_Counter is range 0 .. 2**16 - 1 with
      Size => 16;
 
    type Reported_Tach_Counters is array (Fan_Name) of Tach_Counter with
-     Pack, Scalar_Storage_Order => System.Low_Order_First;
+     Size => 16 * 4, Component_Size => 16, Scalar_Storage_Order => System.Low_Order_First;
 
    type Message_From_Server_Kind is
      (Setup_Kind,
@@ -239,8 +240,7 @@ package Messages is
             null;
       end case;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 98_624;
-
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 98_496;
    for Message_From_Server_Content use record
       Kind                  at  0 range 0 ..      7;
       Index                 at  8 range 0 ..     63;
@@ -254,7 +254,7 @@ package Messages is
       Heater_Targets        at 24 range 0 ..     63;
       Last_Index            at 32 range 0 ..     15;
       Safe_Stop_After       at 34 range 0 ..      7;
-      Steps                 at 35 range 0 .. 98_303;
+      Steps                 at 36 range 0 .. 98_159;
       Conditon_Input_Switch at 16 range 0 ..      7;
       Skip_If_Hit_State     at 17 range 0 ..      7;
       TMC_Write_Data        at 16 range 0 ..     63;
@@ -267,12 +267,12 @@ package Messages is
       Checksum : CRC32;
       Content  : Message_From_Server_Content;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 3_084 * 32;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 3_080 * 32;
      --  Size should always be a multiple of 32 to allow for 32-bit CRC inputs on STM32.
 
    for Message_From_Server use record
       Checksum at 0 range 0 ..     31;
-      Content  at 8 range 0 .. 98_623;
+      Content  at 8 range 0 .. 98_495;
    end record;
 
    type Message_From_Client_Kind is (Hello_Kind, Status_Kind, TMC_Read_Reply_Kind, Check_Reply_Kind) with
