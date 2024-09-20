@@ -402,6 +402,9 @@ procedure Prunt_Board_2_Server is
       end loop;
    end Autotune_Heater;
 
+   Stepper_UART_Address : constant array (Stepper_Name) of Prunt.TMC_Types.TMC2240.UART_Node_Address :=
+     (Stepper_1 => 6, Stepper_2 => 4, Stepper_3 => 3, Stepper_4 => 2, Stepper_5 => 5, Stepper_6 => 6);
+
    package My_Controller is new Prunt.Controller
      (Generic_Types              => My_Controller_Generic_Types,
       Stepper_Hardware           =>
