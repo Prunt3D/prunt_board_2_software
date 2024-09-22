@@ -43,6 +43,13 @@ package Messages is
    type Client_ID is array (1 .. 4) of Client_ID_Part with
      Size => 32 * 4, Component_Size => 32, Scalar_Storage_Order => System.Low_Order_First;
 
+     --  Change the below client ID if you are porting this code to a new board. The following command may be used to
+     --  generate a random ID:
+     --  hexdump -vn32 -e '1/4 "16#" "%02X" "#, "' /dev/urandom && echo ""
+   DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE :
+     constant Client_ID :=
+     (16#14BC_80C3#, 16#53B1_4CAC#, 16#DE61_09E7#, 16#6BC8_2ECD#);
+
    type Input_Switch_State is (Low, High) with
      Size => 8;
 
@@ -184,6 +191,14 @@ package Messages is
    type Reported_Tach_Counters is array (Fan_Name) of Tach_Counter with
      Size => 16 * 4, Component_Size => 16, Scalar_Storage_Order => System.Low_Order_First;
 
+   type Firmware_Data_Offset is mod 2**8;
+
+   type Firmware_Byte is mod 2**8 with
+     Size => 8;
+
+   type Firmware_Data_Array is array (1 .. 10 * 1_024) of Firmware_Byte with
+     Component_Size => 8, Size => 8 * 10 * 1_024, Scalar_Storage_Order => System.Low_Order_First;
+
    type Message_From_Server_Kind is
      (Setup_Kind,
       Heater_Reconfigure_Kind,
@@ -199,8 +214,31 @@ package Messages is
       Enable_Stepper_Kind,
       Disable_Stepper_Kind,
       Enable_High_Power_Switch_Kind,
-      Disable_High_Power_Switch_Kind) with
+      Disable_High_Power_Switch_Kind,
+      Firmware_Update_Start_Kind,
+      Firmware_Update_Data_Kind,
+      Firmware_Update_Done_Kind) with
      Size => 8;
+
+   for Message_From_Server_Kind use
+     (Setup_Kind                         => 129,
+      Heater_Reconfigure_Kind            => 130,
+      Loop_Setup_Kind                    => 131,
+      Regular_Step_Delta_List_Kind       => 132,
+      Looping_Step_Delta_List_Kind       => 133,
+      Condition_Check_Kind               => 134,
+      TMC_Write_Kind                     => 135,
+      TMC_Read_Kind                      => 136,
+      Status_Kind                        => 137,
+      Check_If_Idle_Kind                 => 138,
+      Check_If_Heater_Autotune_Done_Kind => 139,
+      Enable_Stepper_Kind                => 140,
+      Disable_Stepper_Kind               => 141,
+      Enable_High_Power_Switch_Kind      => 142,
+      Disable_High_Power_Switch_Kind     => 143,
+      Firmware_Update_Start_Kind         => 252,
+      Firmware_Update_Data_Kind          => 253,
+      Firmware_Update_Done_Kind          => 254);
 
    type Message_From_Server_Content (Kind : Message_From_Server_Kind := Setup_Kind) is record
       Index : Message_Index;
@@ -238,9 +276,18 @@ package Messages is
             Stepper : Stepper_Name;
          when Enable_High_Power_Switch_Kind | Disable_High_Power_Switch_Kind =>
             null;
+         when Firmware_Update_Start_Kind =>
+            ID : Client_ID;
+         when Firmware_Update_Data_Kind =>
+            Firmware_Offset : Firmware_Data_Offset;
+            Firmware_Data   : Firmware_Data_Array;
+         when Firmware_Update_Done_Kind =>
+            null;
       end case;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 98_496;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 3_078 * 32;
+     --  Size should always be a multiple of 32 to allow for 32-bit CRC inputs on STM32.
+
    for Message_From_Server_Content use record
       Kind                  at  0 range 0 ..      7;
       Index                 at  8 range 0 ..     63;
@@ -261,68 +308,93 @@ package Messages is
       TMC_Read_Data         at 16 range 0 ..     31;
       Heater_To_Check       at 16 range 0 ..      7;
       Stepper               at 16 range 0 ..      7;
+      ID                    at 16 range 0 ..    127;
+      Firmware_Offset       at 16 range 0 ..      7;
+      Firmware_Data         at 20 range 0 .. 81_919;
    end record;
 
    type Message_From_Server is record
       Checksum : CRC32;
       Content  : Message_From_Server_Content;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 3_080 * 32;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 3_079 * 32;
      --  Size should always be a multiple of 32 to allow for 32-bit CRC inputs on STM32.
 
    for Message_From_Server use record
       Checksum at 0 range 0 ..     31;
-      Content  at 8 range 0 .. 98_495;
+      Content  at 4 range 0 .. 98_495;
    end record;
 
-   type Message_From_Client_Kind is (Hello_Kind, Status_Kind, TMC_Read_Reply_Kind, Check_Reply_Kind) with
+   type Client_Message_Self_Length is mod 2**32 with
+     Size => 32;
+
+   type Message_From_Client_Kind is
+     (Hello_Kind, Firmware_Update_Reply_Kind, Status_Kind, TMC_Read_Reply_Kind, Check_Reply_Kind) with
      Size => 8;
 
+   for Message_From_Client_Kind use
+     (Hello_Kind                 => 1,
+      Firmware_Update_Reply_Kind => 2,
+      Status_Kind                => 3,
+      TMC_Read_Reply_Kind        => 4,
+      Check_Reply_Kind           => 5);
+
    type Message_From_Client_Content (Kind : Message_From_Client_Kind := Hello_Kind) is record
-      Index        : Message_Index;
-      Temperatures : Reported_Temperatures;
-      Heaters      : Reported_Heater_PWMs;
-      Switches     : Reported_Switch_States;
-      Tachs        : Reported_Tach_Counters;
+      Index : Message_Index;
       case Kind is
-         when Hello_Kind =>
-            Version : Client_Version;
-            ID      : Client_ID;
-         when Status_Kind =>
-            null;
-         when TMC_Read_Reply_Kind =>
-            TMC_Receive_Failed : Byte_Boolean;
-            TMC_Data           : TMC2240_UART_Data_Byte_Array;
-         when Check_Reply_Kind =>
-            Condition_Met : Byte_Boolean;
+         when Hello_Kind | Firmware_Update_Reply_Kind =>
+            ID          : Client_ID;
+            Version     : Client_Version;
+            Self_Length : Client_Message_Self_Length;
+            --  Number of nibbles sent in complete message from client.
+         when others =>
+            Temperatures : Reported_Temperatures;
+            Heaters      : Reported_Heater_PWMs;
+            Switches     : Reported_Switch_States;
+            Tachs        : Reported_Tach_Counters;
+            case Kind is
+               when Hello_Kind | Firmware_Update_Reply_Kind =>
+                  null;
+               when Status_Kind =>
+                  null;
+               when TMC_Read_Reply_Kind =>
+                  TMC_Receive_Failed : Byte_Boolean;
+                  TMC_Data           : TMC2240_UART_Data_Byte_Array;
+               when Check_Reply_Kind =>
+                  Condition_Met : Byte_Boolean;
+            end case;
       end case;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 640;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 16 * 32;
+     --  Size should always be a multiple of 32 to allow for 32-bit CRC inputs on STM32.
 
    for Message_From_Client_Content use record
       Kind               at  0 range 0 ..   7;
       Index              at  8 range 0 ..  63;
-      Temperatures       at 16 range 0 ..  95;
+      ID                 at 16 range 0 .. 127;
+      Version            at 32 range 0 ..  31;
+      Self_Length        at 36 range 0 ..  31;
+      --  Always keep the above fields at the same positions so the server can reliably detect an unexpected firmware
+      --  version.
+      Temperatures       at 16 range 0 .. 127;
       Heaters            at 32 range 0 ..  31;
       Switches           at 36 range 0 ..  79;
       Tachs              at 46 range 0 ..  63;
-      Version            at 56 range 0 ..  31;
-      ID                 at 60 range 0 .. 127;
-      TMC_Receive_Failed at 56 range 0 ..   7;
-      TMC_Data           at 57 range 0 ..  63;
-      Condition_Met      at 56 range 0 ..   7;
+      TMC_Receive_Failed at 54 range 0 ..   7;
+      TMC_Data           at 55 range 0 ..  63;
+      Condition_Met      at 54 range 0 ..   7;
    end record;
 
    type Message_From_Client is record
       Checksum : CRC32;
       Content  : Message_From_Client_Content;
    end record with
-     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 22 * 32;
+     Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 17 * 32;
      --  Size should always be a multiple of 32 to allow for 32-bit CRC inputs on STM32.
 
    for Message_From_Client use record
       Checksum at 0 range 0 ..  31;
-      Content  at 8 range 0 .. 639;
+      Content  at 4 range 0 .. 511;
    end record;
 
 end Messages;

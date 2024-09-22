@@ -14,16 +14,17 @@ package Server_Communication is
 
 private
 
-   Init_Done : Boolean := False with Atomic, Volatile;
+   Init_Done : Boolean := False with
+     Atomic, Volatile;
 
-   RX_Message : Message_From_Server;
+   RX_Message : aliased Message_From_Server with
+     Alignment => 4, Volatile;
 
-   TX_Message : Message_From_Client;
+   TX_Message : aliased Message_From_Client with
+     Alignment => 4, Volatile;
 
    procedure Set_TX_Message_Kind (Kind : Message_From_Client_Kind);
    procedure Set_TX_Message_CRC;
    procedure Transmit_TX_Message;
-
-   Last_Step_Delta : Step_Delta;
 
 end Server_Communication;

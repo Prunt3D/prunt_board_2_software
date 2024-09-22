@@ -19,6 +19,11 @@ with Ada.Interrupts;       use Ada.Interrupts;
 
 package Hardware_Configuration is
 
+   --  Self_Check
+
+   Self_Check_CRC_Unit : CRC_32 renames CRC_Unit;
+   --  Shared with Server_Communications.
+
    --  Server_Communications
 
    Comms_UART_DMA_RX_Controller : DMA_Controller renames DMA_1;
@@ -27,6 +32,7 @@ package Hardware_Configuration is
    Comms_UART_DMA_RX_Channel    : constant DMA_Channel_Selector := USART3_RX;
 
    Comms_CRC_Unit : CRC_32 renames CRC_Unit;
+   --  Shared with Self_Check.
 
    Comms_UART           : USART renames USART_3;
    Comms_UART_TX_Pin    : constant GPIO_Point              := PC10;
@@ -149,12 +155,5 @@ package Hardware_Configuration is
         (Kind => Timer_Kind, Point => PB0, Comp => Comp_4'Access, Tim => Timer_3'Access, Trigger => Comp_4_Output),
       Fan_4 =>
         (Kind => Timer_Kind, Point => PA0, Comp => Comp_3'Access, Tim => Timer_5'Access, Trigger => Comp_3_Output));
-
-   --  Change the below client ID if you are porting this code to a new board. The following command may be used to
-   --  generate a random ID:
-   --  hexdump -vn32 -e '1/4 "16#" "%02X" "#, "' /dev/urandom && echo ""
-   DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE :
-     constant Client_ID :=
-     (16#14BC_80C3#, 16#53B1_4CAC#, 16#DE61_09E7#, 16#6BC8_2ECD#);
 
 end Hardware_Configuration;

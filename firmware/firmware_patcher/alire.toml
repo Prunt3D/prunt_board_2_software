@@ -1,0 +1,10 @@
+name = "firmware_patcher"
+description = ""
+version = "0.1.0-dev"
+
+authors = ["Liam Powell"]
+maintainers = ["Liam Powell <liam@liampll.com>"]
+maintainers-logins = ["liampwll"]
+licenses = "GPL-3.0-or-later"
+website = ""
+tags = []

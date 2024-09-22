@@ -13,6 +13,7 @@ with Ada.Real_Time; use Ada.Real_Time;
 with GNAT.Source_Info;
 with System.Machine_Reset;
 with System;
+with Self_Check;
 
 with Last_Chance_Handler;
 pragma Unreferenced (Last_Chance_Handler);
@@ -45,6 +46,11 @@ begin
 
    --  Always start server communication first so exceptions can be reported.
    Server_Communication.Init;
+
+   Server_Communication.Transmit_String_Line ("Startup: Integrity check");
+   if not Self_Check.Current_Bank_Is_Valid then
+      raise Constraint_Error with "Integrity check failed. Manual flashing is required.";
+   end if;
 
    Server_Communication.Transmit_String_Line ("Startup: Fans.Init");
    Fans.Init;

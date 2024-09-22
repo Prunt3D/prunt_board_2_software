@@ -7,6 +7,8 @@ with STM32.USARTs;           use STM32.USARTs;
 with STM32.DMA;              use STM32.DMA;
 with STM32.Device;           use STM32.Device;
 with Physical_Types;         use Physical_Types;
+with STM32.Flash;
+with Self_Check;
 with Ada.Characters.Latin_1;
 with Step_Generator;
 with Steppers;
@@ -117,9 +119,10 @@ package body Server_Communication is
       --  TODO: For some reason the above line gives a Range_Check error without the Uint16.
 
       Set_TX_Message_Kind (Hello_Kind);
-      TX_Message.Content.Index   := Last_Message_Index;
-      TX_Message.Content.Version := 1;
-      TX_Message.Content.ID      :=
+      TX_Message.Content.Index       := Last_Message_Index;
+      TX_Message.Content.Version     := 1;
+      TX_Message.Content.Self_Length := Message_From_Client'Value_Size / 4;
+      TX_Message.Content.ID          :=
         DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE;
       Set_TX_Message_CRC;
 
@@ -152,6 +155,16 @@ package body Server_Communication is
          System.Machine_Code.Asm
            ("", Outputs => Message_From_Server'Asm_Output ("=g", RX_Message), Clobber => "memory", Volatile => True);
 
+         for S in USART_Status_Flag loop
+            if
+              (S = Parity_Error_Indicated or S = USART_Noise_Error_Indicated or S = Framing_Error_Indicated or
+               S = Overrun_Error_Indicated)
+              and then Status (Comms_UART, S)
+            then
+               raise Constraint_Error with "USART status error: " & S'Image;
+            end if;
+         end loop;
+
          declare
             CRC_Output : UInt32;
             CRC_Input  : Block_32 (1 .. Message_From_Server_Content'Value_Size / 32) with
@@ -168,14 +181,16 @@ package body Server_Communication is
                --  This will cause the last message to be resent, which will cause the server to resend its last
                --  message.
             elsif RX_Message.Content.Index = Last_Message_Index then
-               null;
+               Transmit_String_Line ("Got index " & RX_Message.Content.Index'Image & ". Resending last.");
                --  This will cause the last message to be resent. The server sending the same message twice indicates
                --  that the checksum did not match.
             elsif RX_Message.Content.Index /= Last_Message_Index + 1 then
                raise Constraint_Error
                  with "Server sent wrong message index. Expected " & Last_Message_Index'Image & " but got " &
                  RX_Message.Content.Index'Image;
-            elsif not Setup_Done and RX_Message.Content.Kind /= Setup_Kind then
+            elsif not Setup_Done and RX_Message.Content.Kind /= Setup_Kind and
+              RX_Message.Content.Kind not in Firmware_Update_Start_Kind .. Firmware_Update_Done_Kind
+            then
                raise Constraint_Error with "Expected setup message, server sent " & RX_Message.Content.Kind'Image;
             elsif Setup_Done and RX_Message.Content.Kind = Setup_Kind then
                raise Constraint_Error with "Server sent multiple setup messages.";
@@ -262,27 +277,60 @@ package body Server_Communication is
                      High_Power_Switch.Enable;
                   when Disable_High_Power_Switch_Kind =>
                      High_Power_Switch.Disable;
+                  when Firmware_Update_Start_Kind =>
+                     Set_TX_Message_Kind (Firmware_Update_Reply_Kind);
+                     if not STM32.Flash.Is_Locked (Flash) then
+                        raise Constraint_Error with "Update already started.";
+                     else
+                        STM32.Flash.Unlock (Flash);
+                        STM32.Flash.Erase_Inactive_Bank (Flash);
+                     end if;
+                  when Firmware_Update_Data_Kind =>
+                     Set_TX_Message_Kind (Firmware_Update_Reply_Kind);
+                     if STM32.Flash.Is_Locked (Flash) then
+                        raise Constraint_Error with "Flash is locked.";
+                     end if;
+                     declare
+                        Address : constant Natural :=
+                          16#0804_0000# + 10 * 1_024 * Natural (RX_Message.Content.Firmware_Offset);
+                        Data    : STM32.Flash.Flash_Data (1 .. 10 * 1_024 / 8) with
+                          Address => RX_Message.Content.Firmware_Data'Address;
+                     begin
+                        STM32.Flash.Write (Flash, System'To_Address (Address), Data);
+                     end;
+                  when Firmware_Update_Done_Kind =>
+                     Set_TX_Message_Kind (Firmware_Update_Reply_Kind);
+                     if STM32.Flash.Is_Locked (Flash) then
+                        raise Constraint_Error with "Flash is locked.";
+                     end if;
+                     if not Self_Check.Other_Bank_Is_Valid then
+                        raise Constraint_Error with "New firmware not valid. Not switching to new firmware.";
+                     else
+                        STM32.Flash.Switch_Active_Bank_And_Reset (Flash);
+                     end if;
                end case;
             end if;
          end;
 
-         --  We always update these fields, even if the server asked for a resend.
-         for Heater in Heater_Name loop
-            TX_Message.Content.Heaters (Heater) := Heaters.Get_PWM (Heater);
-         end loop;
+         if TX_Message.Content.Kind /= Hello_Kind and TX_Message.Content.Kind /= Firmware_Update_Reply_Kind then
+            --  We always update these fields, even if the server asked for a resend.
+            for Heater in Heater_Name loop
+               TX_Message.Content.Heaters (Heater) := Heaters.Get_PWM (Heater);
+            end loop;
 
-         for Thermistor in Thermistor_Name loop
-            declare
-               Temp : Temperature := Thermistors.Last_Reported_Temperature (Thermistor);
-            begin
-               if Temp < Dimensionless (Fixed_Point_Celcius'First + 10.0) * celcius then
-                  TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celcius'First;
-               elsif Temp > Dimensionless (Fixed_Point_Celcius'Last - 10.0) * celcius then
-                  TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celcius'Last;
-               else
-                  TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celcius (Temp / celcius);
-               end if;
-            end;
+            for Thermistor in Thermistor_Name loop
+               declare
+                  Temp : Temperature := Thermistors.Last_Reported_Temperature (Thermistor);
+               begin
+                  if Temp < Dimensionless (Fixed_Point_Celcius'First + 10.0) * celcius then
+                     TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celcius'First;
+                  elsif Temp > Dimensionless (Fixed_Point_Celcius'Last - 10.0) * celcius then
+                     TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celcius'Last;
+                  else
+                     TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celcius (Temp / celcius);
+                  end if;
+               end;
+            end loop;
 
             for Switch in Input_Switch_Name loop
                TX_Message.Content.Switches (Switch) := Input_Switches.Get_State (Switch);
@@ -291,7 +339,7 @@ package body Server_Communication is
             for Fan in Fan_Name loop
                TX_Message.Content.Tachs (Fan) := Fans.Get_Tach_Counter (Fan);
             end loop;
-         end loop;
+         end if;
 
          Start_Transfer
            (This        => Comms_UART_DMA_RX_Controller,
@@ -314,13 +362,14 @@ package body Server_Communication is
                Result         => Error);
 
             --  TODO: Change this to allow for failures if anyone reports them, specifically UART framing errors.
-            if Error = DMA_Transfer_Error or Error = DMA_Device_Error then
-               raise DMA_Error with Error'Image;
-            elsif Error = DMA_Timeout_Error then
-               --  This timer may seem short, but the step queue is less than a second, so the server needs to have
-               --  much shorter time between messages than this during normal operation.
-               raise Timeout_Error with "No message from server for 5 seconds.";
-            end if;
+            case Error is
+               when DMA_Transfer_Error | DMA_Device_Error =>
+                  raise DMA_Error with Error'Image;
+               when DMA_Timeout_Error =>
+                  raise Timeout_Error with "No message from server for 5 seconds.";
+               when DMA_No_Error =>
+                  null;
+            end case;
          end;
       end loop;
    end Run;

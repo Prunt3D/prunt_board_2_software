@@ -2,28 +2,31 @@
 When first building or when updating the board support libraries:
 #+begin_src shell
 bash -c 'cd board_support/bb-runtimes/ && ./runtimes.sh'
+bash -c 'cd firmware_patcher && alr build'
 #+end_src
 
 ** Regular Build
 #+begin_src shell
 alr clean # When switching between debug and release
-alr build && alr exec -- arm-none-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin
+alr build && alr exec -- arm-none-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin && ./firmware_patcher/bin/firmware_patcher bin/prunt_board_2_firmware.bin bin/prunt_board_2_firmware_with_crc.bin
 #+end_src
 
 ** Production Build
 #+begin_src shell
 alr clean # When switching between debug and release
-ADL_BUILD=Production alr build && alr exec -- arm-none-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin
+ADL_BUILD=Production alr build && alr exec -- arm-none-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin && ./firmware_patcher/bin/firmware_patcher bin/prunt_board_2_firmware.bin bin/prunt_board_2_firmware_with_crc.bin
 #+end_src
 
 * Flashing
 #+begin_src shell
-stm32flash -w ./bin/prunt_board_2_firmware.bin -v /dev/serial/by-id/usb-Prunt_Prunt_Board_2_...
+# Full erase or else integrity check will fail if new image is smaller
+stm32flash -o /dev/serial/by-id/usb-Prunt_3D_Prunt_Board_2_...
+stm32flash -w ./bin/prunt_board_2_firmware_with_crc.bin -v /dev/serial/by-id/usb-Prunt_3D_Prunt_Board_2_...
 #+end_src
 
 * STTY For Debugging
 #+begin_src shell
-stty -F /dev/serial/by-id/usb-Prunt_Prunt_Board_2_... 3000000 cs8 -cstopb -parenb raw
+stty -F /dev/serial/by-id/usb-Prunt_3D_Prunt_Board_2_... 75 cs8 -cstopb -parenb raw
 #+end_src
 
 * Stack Usage Analysis

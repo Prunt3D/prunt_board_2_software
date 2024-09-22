@@ -44,14 +44,10 @@ package body STM32.Flash is
          exit when not This.SR.BSY;
       end loop;
 
-      if This.SR /= (others => <>) then
-         raise Constraint_Error with "Unexpected SR state: " & This.SR'Image;
-      end if;
-
       Disable_Cache (This);
 
       if This.CR.PER or This.CR.MER1 or This.CR.MER2 then
-         raise Constraint_Error with "Erase bits already set. CR state: " & This.CR'Image;
+         raise Constraint_Error with "Erase bits already set.";
       end if;
 
       if STM32_SVD.SYSCFG.SYSCFG_Periph.MEMRMP.FB_mode then
@@ -62,29 +58,19 @@ package body STM32.Flash is
 
       This.CR.STRT := True;
 
-      declare
-         Start_Time : constant Time := Clock;
-      begin
-         loop
-            if Clock > Start_Time + Milliseconds (50) then
-               raise Constraint_Error with "Erase taking too long. SR state: " & This.SR'Image;
-            end if;
-            exit when not This.SR.BSY;
-         end loop;
-      end;
+      loop
+         exit when not This.SR.BSY;
+      end loop;
 
-      if This.SR /= (EOP => True, others => <>) then
-         raise Constraint_Error with "Unexpected SR state: " & This.SR'Image;
-      end if;
-      This.SR.EOP := True;
+      This.CR.MER1 := False;
+      This.CR.MER2 := False;
+      This.CR.PER  := False;
 
       Enable_Cache (This);
    end Erase_Inactive_Bank;
 
    procedure Write (This : in out Flash_Memory; Address : System.Address; Data : Flash_Data) is
-      type Flash_Array_Type is array (Data'Range, 1 .. 2) of HAL.UInt32 with
-        Pack, Volatile, Volatile_Components;
-      Flash_Array : Flash_Array_Type with
+      Flash_Array : Flash_Data (Data'Range) with
         Volatile, Address => Address;
    begin
       --  TODO: We should probably make this protected in case the user is doing multitasking stuff.
@@ -92,36 +78,32 @@ package body STM32.Flash is
          exit when not This.SR.BSY;
       end loop;
 
-      if This.SR /= (others => <>) then
-         raise Constraint_Error with "Unexpected SR state: " & This.SR'Image;
+      if This.SR.PGSERR then
+         This.SR.PGSERR := True;
+      end if;
+
+      if This.SR.PGAERR then
+         This.SR.PGAERR := True;
       end if;
 
       Disable_Cache (This);
 
       This.CR.PG := True;
       for I in Data'Range loop
-         Flash_Array (I, 1) := Data (I) (1);
-         Asm ("isb 0xF", Volatile => True, Clobber => "memory");
-         Flash_Array (I, 2) := Data (I) (2);
-         Asm ("isb 0xF", Volatile => True, Clobber => "memory");
-
-         declare
-            Start_Time : constant Time := Clock;
-         begin
-            loop
-               if Clock > Start_Time + Milliseconds (5) then
-                  raise Constraint_Error with "Write taking too long. SR state: " & This.SR'Image;
-               end if;
-               exit when not This.SR.BSY;
-            end loop;
-         end;
-
-         if This.SR /= (EOP => True, others => <>) then
-            raise Constraint_Error with "Unexpected SR state: " & This.SR'Image;
-         end if;
-         This.SR.EOP := True;
+         Asm ("isb 0xF", Clobber => "memory", Volatile => True);
+         Flash_Array (I) (1) := Data (I) (1);
+         Asm ("isb 0xF", Clobber => "memory", Volatile => True);
+         Flash_Array (I) (2) := Data (I) (2);
+         Asm ("isb 0xF", Clobber => "memory", Volatile => True);
+         loop
+            exit when not This.SR.BSY;
+         end loop;
       end loop;
       This.CR.PG := False;
+
+      if This.SR /= (Reserved_2_2 => 0, Reserved_10_13 => 0, Reserved_17_31 => 0, others => False) then
+         raise Constraint_Error with "Unexpected SR state";
+      end if;
 
       Enable_Cache (This);
    end Write;
@@ -135,6 +117,10 @@ package body STM32.Flash is
 
       This.KEYR := 16#4567_0123#;
       This.KEYR := 16#CDEF_89AB#;
+
+      loop
+         exit when not This.SR.BSY;
+      end loop;
    end Unlock;
 
    procedure Switch_Active_Bank_And_Reset (This : in out Flash_Memory) is
@@ -151,10 +137,6 @@ package body STM32.Flash is
          raise Constraint_Error with "Option bytes locked.";
       end if;
 
-      if This.SR /= (others => <>) then
-         raise Constraint_Error with "Unexpected SR state: " & This.SR'Image;
-      end if;
-
       Disable_Cache (This);
 
       if STM32_SVD.SYSCFG.SYSCFG_Periph.MEMRMP.FB_mode then
@@ -165,16 +147,9 @@ package body STM32.Flash is
 
       This.CR.OPTSTRT := True;
 
-      declare
-         Start_Time : constant Time := Clock;
-      begin
-         loop
-            if Clock > Start_Time + Milliseconds (50) then
-               raise Constraint_Error with "Option write taking too long. SR state: " & This.SR'Image;
-            end if;
-            exit when not This.SR.BSY;
-         end loop;
-      end;
+      loop
+         exit when not This.SR.BSY;
+      end loop;
 
       This.CR.OBL_LAUNCH := True;
 
