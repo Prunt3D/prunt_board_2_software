@@ -69,6 +69,7 @@ with STM32.HRTimers; use STM32.HRTimers;
 with STM32.OPAMP;    use STM32.OPAMP;
 with STM32.COMP;     use STM32.COMP;
 with STM32.CAN;      use STM32.CAN;
+with STM32.Flash;    use STM32.Flash;
 
 package STM32.Device is
    pragma Elaborate_Body;
@@ -892,6 +893,13 @@ package STM32.Device is
 
    function System_Clock_Frequencies return RCC_System_Clocks;
    --  Returns each RCC system clock frequency in Hz.
+
+   -----------
+   -- Flash --
+   -----------
+
+   Flash : aliased Flash_Memory
+     with Volatile, Import, Address => FLASH_Base;
 
 private
 
