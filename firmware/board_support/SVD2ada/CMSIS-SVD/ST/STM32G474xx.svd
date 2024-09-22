@@ -1274,6 +1274,18 @@
                      <bitWidth>7</bitWidth>
                   </field>
                   <field>
+                     <name>BKER</name>
+                     <description>Bank erase</description>
+                     <bitOffset>11</bitOffset>
+                     <bitWidth>1</bitWidth>
+                  </field>
+                  <field>
+                     <name>MER2</name>
+                     <description>Bank 2 Mass erase</description>
+                     <bitOffset>15</bitOffset>
+                     <bitWidth>1</bitWidth>
+                  </field>
+                  <field>
                      <name>STRT</name>
                      <description>Start</description>
                      <bitOffset>16</bitOffset>
@@ -1319,6 +1331,12 @@
                      <name>SEC_PROT1</name>
                      <description>SEC_PROT1</description>
                      <bitOffset>28</bitOffset>
+                     <bitWidth>1</bitWidth>
+                  </field>
+                  <field>
+                     <name>SEC_PROT2</name>
+                     <description>SEC_PROT2</description>
+                     <bitOffset>29</bitOffset>
                      <bitWidth>1</bitWidth>
                   </field>
                   <field>
@@ -1462,6 +1480,18 @@
                      <name>WWDG_SW</name>
                      <description>Window watchdog selection</description>
                      <bitOffset>19</bitOffset>
+                     <bitWidth>1</bitWidth>
+                  </field>
+                  <field>
+                     <name>BFB2</name>
+                     <description>Dual bank boot</description>
+                     <bitOffset>20</bitOffset>
+                     <bitWidth>1</bitWidth>
+                  </field>
+                  <field>
+                     <name>DBANK</name>
+                     <description>Dual bank mode</description>
+                     <bitOffset>22</bitOffset>
                      <bitWidth>1</bitWidth>
                   </field>
                   <field>

@@ -1,5 +1,5 @@
 --
---  Copyright (C) 2021, AdaCore
+--  Copyright (C) 2024, AdaCore
 --
 
 pragma Style_Checks (Off);
@@ -143,6 +143,8 @@ package Interfaces.STM32.Flash is
    subtype CR_PER_Field is Interfaces.STM32.Bit;
    subtype CR_MER1_Field is Interfaces.STM32.Bit;
    subtype CR_PNB_Field is Interfaces.STM32.UInt7;
+   subtype CR_BKER_Field is Interfaces.STM32.Bit;
+   subtype CR_MER2_Field is Interfaces.STM32.Bit;
    subtype CR_STRT_Field is Interfaces.STM32.Bit;
    subtype CR_OPTSTRT_Field is Interfaces.STM32.Bit;
    subtype CR_FSTPG_Field is Interfaces.STM32.Bit;
@@ -150,7 +152,33 @@ package Interfaces.STM32.Flash is
    subtype CR_ERRIE_Field is Interfaces.STM32.Bit;
    subtype CR_RDERRIE_Field is Interfaces.STM32.Bit;
    subtype CR_OBL_LAUNCH_Field is Interfaces.STM32.Bit;
-   subtype CR_SEC_PROT1_Field is Interfaces.STM32.Bit;
+   --  CR_SEC_PROT array element
+   subtype CR_SEC_PROT_Element is Interfaces.STM32.Bit;
+
+   --  CR_SEC_PROT array
+   type CR_SEC_PROT_Field_Array is array (1 .. 2) of CR_SEC_PROT_Element
+     with Component_Size => 1, Size => 2;
+
+   --  Type definition for CR_SEC_PROT
+   type CR_SEC_PROT_Field
+     (As_Array : Boolean := False)
+   is record
+      case As_Array is
+         when False =>
+            --  SEC_PROT as a value
+            Val : Interfaces.STM32.UInt2;
+         when True =>
+            --  SEC_PROT as an array
+            Arr : CR_SEC_PROT_Field_Array;
+      end case;
+   end record
+     with Unchecked_Union, Size => 2;
+
+   for CR_SEC_PROT_Field use record
+      Val at 0 range 0 .. 1;
+      Arr at 0 range 0 .. 1;
+   end record;
+
    subtype CR_OPTLOCK_Field is Interfaces.STM32.Bit;
    subtype CR_LOCK_Field is Interfaces.STM32.Bit;
 
@@ -165,7 +193,13 @@ package Interfaces.STM32.Flash is
       --  Page number
       PNB            : CR_PNB_Field := 16#0#;
       --  unspecified
-      Reserved_10_15 : Interfaces.STM32.UInt6 := 16#0#;
+      Reserved_10_10 : Interfaces.STM32.Bit := 16#0#;
+      --  Bank erase
+      BKER           : CR_BKER_Field := 16#0#;
+      --  unspecified
+      Reserved_12_14 : Interfaces.STM32.UInt3 := 16#0#;
+      --  Bank 2 Mass erase
+      MER2           : CR_MER2_Field := 16#0#;
       --  Start
       STRT           : CR_STRT_Field := 16#0#;
       --  Options modification start
@@ -183,9 +217,7 @@ package Interfaces.STM32.Flash is
       --  Force the option byte loading
       OBL_LAUNCH     : CR_OBL_LAUNCH_Field := 16#0#;
       --  SEC_PROT1
-      SEC_PROT1      : CR_SEC_PROT1_Field := 16#0#;
-      --  unspecified
-      Reserved_29_29 : Interfaces.STM32.Bit := 16#0#;
+      SEC_PROT       : CR_SEC_PROT_Field := (As_Array => False, Val => 16#0#);
       --  Options Lock
       OPTLOCK        : CR_OPTLOCK_Field := 16#1#;
       --  FLASH_CR Lock
@@ -199,7 +231,10 @@ package Interfaces.STM32.Flash is
       PER            at 0 range 1 .. 1;
       MER1           at 0 range 2 .. 2;
       PNB            at 0 range 3 .. 9;
-      Reserved_10_15 at 0 range 10 .. 15;
+      Reserved_10_10 at 0 range 10 .. 10;
+      BKER           at 0 range 11 .. 11;
+      Reserved_12_14 at 0 range 12 .. 14;
+      MER2           at 0 range 15 .. 15;
       STRT           at 0 range 16 .. 16;
       OPTSTRT        at 0 range 17 .. 17;
       FSTPG          at 0 range 18 .. 18;
@@ -208,8 +243,7 @@ package Interfaces.STM32.Flash is
       ERRIE          at 0 range 25 .. 25;
       RDERRIE        at 0 range 26 .. 26;
       OBL_LAUNCH     at 0 range 27 .. 27;
-      SEC_PROT1      at 0 range 28 .. 28;
-      Reserved_29_29 at 0 range 29 .. 29;
+      SEC_PROT       at 0 range 28 .. 29;
       OPTLOCK        at 0 range 30 .. 30;
       LOCK           at 0 range 31 .. 31;
    end record;
@@ -274,6 +308,8 @@ package Interfaces.STM32.Flash is
    subtype OPTR_IWDG_STOP_Field is Interfaces.STM32.Bit;
    subtype OPTR_IWDG_STDBY_Field is Interfaces.STM32.Bit;
    subtype OPTR_WWDG_SW_Field is Interfaces.STM32.Bit;
+   subtype OPTR_BFB2_Field is Interfaces.STM32.Bit;
+   subtype OPTR_DBANK_Field is Interfaces.STM32.Bit;
    subtype OPTR_nBOOT1_Field is Interfaces.STM32.Bit;
    subtype OPTR_SRAM2_PE_Field is Interfaces.STM32.Bit;
    subtype OPTR_SRAM2_RST_Field is Interfaces.STM32.Bit;
@@ -306,8 +342,12 @@ package Interfaces.STM32.Flash is
       IWDG_STDBY     : OPTR_IWDG_STDBY_Field := 16#0#;
       --  Window watchdog selection
       WWDG_SW        : OPTR_WWDG_SW_Field := 16#0#;
+      --  Dual bank boot
+      BFB2           : OPTR_BFB2_Field := 16#0#;
       --  unspecified
-      Reserved_20_22 : Interfaces.STM32.UInt3 := 16#0#;
+      Reserved_21_21 : Interfaces.STM32.Bit := 16#0#;
+      --  Dual bank mode
+      DBANK          : OPTR_DBANK_Field := 16#0#;
       --  Boot configuration
       nBOOT1         : OPTR_nBOOT1_Field := 16#0#;
       --  SRAM2 parity check enable
@@ -340,7 +380,9 @@ package Interfaces.STM32.Flash is
       IWDG_STOP      at 0 range 17 .. 17;
       IWDG_STDBY     at 0 range 18 .. 18;
       WWDG_SW        at 0 range 19 .. 19;
-      Reserved_20_22 at 0 range 20 .. 22;
+      BFB2           at 0 range 20 .. 20;
+      Reserved_21_21 at 0 range 21 .. 21;
+      DBANK          at 0 range 22 .. 22;
       nBOOT1         at 0 range 23 .. 23;
       SRAM2_PE       at 0 range 24 .. 24;
       SRAM2_RST      at 0 range 25 .. 25;
