@@ -113,7 +113,7 @@ package body Server_Communication is
          Stream      => Comms_UART_DMA_RX_Stream,
          Source      => Read_Data_Register_Address (Comms_UART),
          Destination => RX_Message'Address,
-         Data_Count  => UInt16 (Message_From_Server'Object_Size / 8));
+         Data_Count  => UInt16 (Message_From_Server'Value_Size / 8));
       --  TODO: For some reason the above line gives a Range_Check error without the Uint16.
 
       Set_TX_Message_Kind (Hello_Kind);
@@ -154,7 +154,7 @@ package body Server_Communication is
 
          declare
             CRC_Output : UInt32;
-            CRC_Input  : Block_32 (1 .. Message_From_Server_Content'Object_Size / 32) with
+            CRC_Input  : Block_32 (1 .. Message_From_Server_Content'Value_Size / 32) with
               Address => RX_Message.Content'Address;
          begin
             Reset_CRC (Comms_CRC_Unit);
@@ -298,7 +298,7 @@ package body Server_Communication is
             Stream      => Comms_UART_DMA_RX_Stream,
             Source      => Read_Data_Register_Address (Comms_UART),
             Destination => RX_Message'Address,
-            Data_Count  => UInt16 (UInt32 (Message_From_Server'Object_Size) / 8));
+            Data_Count  => UInt16 (UInt32 (Message_From_Server'Value_Size) / 8));
 
          Set_TX_Message_CRC;
          Transmit_TX_Message;
@@ -334,7 +334,7 @@ package body Server_Communication is
 
    procedure Set_TX_Message_CRC is
       CRC_Output : UInt32;
-      CRC_Input  : Block_32 (1 .. Message_From_Client_Content'Object_Size / 32) with
+      CRC_Input  : Block_32 (1 .. Message_From_Client_Content'Value_Size / 32) with
         Address => TX_Message.Content'Address;
    begin
       Reset_CRC (Comms_CRC_Unit);
@@ -345,7 +345,7 @@ package body Server_Communication is
    end Set_TX_Message_CRC;
 
    procedure Transmit_TX_Message is
-      type UART_Data_4b is array (1 .. Message_From_Client'Object_Size / 4) of UInt4 with
+      type UART_Data_4b is array (1 .. Message_From_Client'Value_Size / 4) of UInt4 with
         Pack;
       Data : UART_Data_4b with
         Address => TX_Message'Address;
