@@ -75,11 +75,20 @@ procedure Prunt_Board_2_Server is
 
    procedure Report_Heater_Power (Heater : Heater_Name; Power : Fixed_Point_PWM_Scale);
 
-   procedure Report_Input_Swtich_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State);
+   procedure Report_Input_Switch_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State);
+
+   procedure Log (Message : String);
+
+   procedure Prompt_For_Update;
 
    pragma Warnings (Off, "cannot call * before body seen");
    package My_Communications is new Communications
-     (Report_Error, Report_Temperature, Report_Heater_Power, Report_Input_Swtich_State);
+     (Report_Error              => Report_Error,
+      Report_Temperature        => Report_Temperature,
+      Report_Heater_Power       => Report_Heater_Power,
+      Report_Input_Switch_State => Report_Input_Switch_State,
+      Prompt_For_Update         => Prompt_For_Update,
+      Log                       => Log);
    pragma Warnings (On, "cannot call * before body seen");
 
    function Sort_Curve_By_ADC_Value_Comparator (Left, Right : Thermistor_Point) return Boolean is
@@ -444,10 +453,20 @@ procedure Prunt_Board_2_Server is
       My_Controller.Report_Heater_Power (Heater, PWM_Scale (Power));
    end Report_Heater_Power;
 
-   procedure Report_Input_Swtich_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State) is
+   procedure Report_Input_Switch_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State) is
    begin
       My_Controller.Report_Input_Switch_State (Switch, (if State = High then High_State else Low_State));
-   end Report_Input_Swtich_State;
+   end Report_Input_Switch_State;
+
+   procedure Prompt_For_Update is
+   begin
+      My_Controller.Prompt_For_Update;
+   end Prompt_For_Update;
+
+   procedure Log (Message : String) is
+   begin
+      My_Controller.Log (Message);
+   end Log;
 begin
    if Ada.Command_Line.Argument_Count /= 1 then
       raise Constraint_Error with "Usage: " & Ada.Command_Line.Command_Name & " <serial port path>";

@@ -7,6 +7,8 @@ generic
    with procedure Report_Temperature (Thermistor : Thermistor_Name; Temp : Fixed_Point_Celcius);
    with procedure Report_Heater_Power (Heater : Heater_Name; Power : Fixed_Point_PWM_Scale);
    with procedure Report_Input_Switch_State (Switch : Input_Switch_Name; State : Input_Switch_State);
+   with procedure Prompt_For_Update;
+   with procedure Log (Message : String);
 package Communications is
 
    UART_Timeout_Error : exception;
