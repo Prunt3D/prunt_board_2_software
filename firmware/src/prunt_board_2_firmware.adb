@@ -68,8 +68,8 @@ begin
 
    delay until Clock + Seconds (1); --  Ensure voltages have time to come up before ADC calibration.
 
-   Server_Communication.Transmit_String_Line ("Startup: Heaters.Init");
-   Heaters.Init;
+   Server_Communication.Transmit_String_Line ("Startup: Heaters.Make_Safe");
+   Heaters.Make_Safe;
    Server_Communication.Transmit_String_Line ("Startup: Thermistors.Init");
    Thermistors.Init;
 

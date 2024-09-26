@@ -202,6 +202,8 @@ package body Server_Communication is
 
                case RX_Message.Content.Kind is
                   when Setup_Kind =>
+                     Server_Communication.Transmit_String_Line ("Startup: Heaters.Init");
+                     Heaters.Init;
                      Thermistors.Setup
                        (RX_Message.Content.Thermistor_Curves'Unrestricted_Access,
                         RX_Message.Content.Heater_Thermistors);
