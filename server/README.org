@@ -1,0 +1,6 @@
+* Building
+#+begin_src
+# Place prunt_board_2_firmware_with_crc.bin in embedded_resourses
+make -C embedded_resources
+alr build
+#+end_src
