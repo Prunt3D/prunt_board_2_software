@@ -91,7 +91,9 @@ package body Communications is
                      raise Constraint_Error with "Got exception from MCU. Details logged to console. (2)";
                   elsif Received (I) = 254 then
                      Message_Nibbles (Integer (I - Bytes_Consumed) .. Message_Nibbles'Last) := (others => 0);
-                     if (Message.Content.Kind = Hello_Kind or Message.Content.Kind = Firmware_Update_Reply_Kind)
+                     if Message.Content.Kind'Valid
+                       and then
+                       (Message.Content.Kind = Hello_Kind or Message.Content.Kind = Firmware_Update_Reply_Kind)
                        and then Message.Content.Self_Length /= 0
                        and then Message.Content.Self_Length = Client_Message_Self_Length (I - Bytes_Consumed)
                      then
@@ -131,7 +133,8 @@ package body Communications is
             First_Nibble              : Stream_Element;
             Extra_Nibbles_To_Checksum : Stream_Element_Offset := 0;
          begin
-            if (Message.Content.Kind = Hello_Kind or Message.Content.Kind = Firmware_Update_Reply_Kind)
+            if Message.Content.Kind'Valid
+              and then (Message.Content.Kind = Hello_Kind or Message.Content.Kind = Firmware_Update_Reply_Kind)
               and then Message.Content.Self_Length /= 0
             then
                Extra_Nibbles_To_Checksum :=
