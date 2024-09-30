@@ -14,6 +14,7 @@ with GNAT.Source_Info;
 with System.Machine_Reset;
 with System;
 with Self_Check;
+with MCU_Temperature;
 
 with Last_Chance_Handler;
 pragma Unreferenced (Last_Chance_Handler);
@@ -52,6 +53,8 @@ begin
       raise Constraint_Error with "Integrity check failed. Manual flashing is required.";
    end if;
 
+   Server_Communication.Transmit_String_Line ("Startup: Heaters.Make_Safe");
+   Heaters.Make_Safe;
    Server_Communication.Transmit_String_Line ("Startup: Fans.Init");
    Fans.Init;
    Server_Communication.Transmit_String_Line ("Startup: Input_Switches.Init");
@@ -68,10 +71,10 @@ begin
 
    delay until Clock + Seconds (1); --  Ensure voltages have time to come up before ADC calibration.
 
-   Server_Communication.Transmit_String_Line ("Startup: Heaters.Make_Safe");
-   Heaters.Make_Safe;
    Server_Communication.Transmit_String_Line ("Startup: Thermistors.Init");
    Thermistors.Init;
+   Server_Communication.Transmit_String_Line ("Startup: MCU_Temperature.Init");
+   MCU_Temperature.Init;
 
    Server_Communication.Transmit_String_Line ("Startup: Server_Communication.Run");
    Server_Communication.Run;

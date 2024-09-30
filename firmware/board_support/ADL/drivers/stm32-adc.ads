@@ -1070,10 +1070,8 @@ private
          Channel = VBat_Channel);
 
    function VRef_TemperatureSensor_Conversion
-     (This    : Analog_To_Digital_Converter;
-      Channel : Analog_Input_Channel)
-      return Boolean
-   is (This'Address = STM32_SVD.ADC.ADC1_Periph'Address and
-         (Channel in VRef_Channel | TemperatureSensor_Channel));
+     (This : Analog_To_Digital_Converter; Channel : Analog_Input_Channel) return Boolean is
+     ((This'Address = STM32_SVD.ADC.ADC1_Periph'Address and (Channel in VRef_Channel | 16)) or
+      (This'Address = STM32_SVD.ADC.ADC5_Periph'Address and (Channel in VRef_Channel | 4)));
 
 end STM32.ADC;

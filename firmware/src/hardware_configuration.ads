@@ -156,4 +156,6 @@ package Hardware_Configuration is
       Fan_4 =>
         (Kind => Timer_Kind, Point => PA0, Comp => Comp_3'Access, Tim => Timer_5'Access, Trigger => Comp_3_Output));
 
+   --  MCU_Temperature uses ADC_5.
+
 end Hardware_Configuration;
