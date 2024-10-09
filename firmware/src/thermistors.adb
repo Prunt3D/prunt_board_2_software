@@ -170,6 +170,9 @@ package body Thermistors is
                end if;
                Right := Mid - 1;
             else
+               if Mid = Left then
+                  return Bad_Reading_Indicator;
+               end if;
                Left := Mid + 1;
             end if;
          end loop;
