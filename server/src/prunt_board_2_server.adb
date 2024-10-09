@@ -34,12 +34,27 @@ with Prunt.TMC_Types.TMC2240;
 with Ada.Containers.Generic_Constrained_Array_Sort;
 with Prunt.Heaters; use Prunt.Heaters;
 with UXStrings;
+with System.Multiprocessors;
 
 use type Prunt.TMC_Types.TMC2240.UART_Node_Address;
 
 procedure Prunt_Board_2_Server is
 
    Loop_Move_Multiplier : constant := 1024;
+
+   function Argument_Value (Switch : UXStrings.UXString; Default : UXStrings.UXString) return String is
+      use Ada.Command_Line;
+      use UXStrings;
+      Arg1, Arg2 : UXString;
+   begin
+      for Arg in 1 .. Argument_Count loop
+         Arg1 := From_UTF_8 (Argument (Arg));
+         if Arg1.Length > Switch.Length and then Arg1.Slice (Arg1.First, Arg1.First + Switch.Length - 1) = Switch then
+            Arg2 := Arg1.Slice (Arg1.First + Switch.Length, Arg1.Last);
+         end if;
+      end loop;
+      return To_UTF_8 (if Arg2 /= Null_UXString then Arg2 else Default);
+   end Argument_Value;
 
    package My_Controller_Generic_Types is new Prunt.Controller_Generic_Types
      (Stepper_Name      => Stepper_Name,
@@ -89,7 +104,8 @@ procedure Prunt_Board_2_Server is
       Report_Heater_Power       => Report_Heater_Power,
       Report_Input_Switch_State => Report_Input_Switch_State,
       Prompt_For_Update         => Prompt_For_Update,
-      Log                       => Log);
+      Log                       => Log,
+      Runner_CPU => System.Multiprocessors.CPU_Range'Value (Argument_Value ("--communications-cpu=", "0")));
    pragma Warnings (On, "cannot call * before body seen");
 
    function Sort_Curve_By_ADC_Value_Comparator (Left, Right : Thermistor_Point) return Boolean is
@@ -467,20 +483,6 @@ procedure Prunt_Board_2_Server is
    begin
       My_Controller.Log (Message);
    end Log;
-
-   function Argument_Value (Switch : UXStrings.UXString; Default : UXStrings.UXString) return String is
-      use Ada.Command_Line;
-      use UXStrings;
-      Arg1, Arg2 : UXString;
-   begin
-      for Arg in 1 .. Argument_Count loop
-         Arg1 := From_UTF_8 (Argument (Arg));
-         if Arg1.Length > Switch.Length and then Arg1.Slice (Arg1.First, Arg1.First + Switch.Length - 1) = Switch then
-            Arg2 := Arg1.Slice (Arg1.First + Switch.Length, Arg1.Last);
-         end if;
-      end loop;
-      return To_UTF_8 (if Arg2 /= Null_UXString then Arg2 else Default);
-   end Argument_Value;
 begin
    if Argument_Value ("--serial-port=", "") = "" then
       raise Constraint_Error with "Usage: " & Ada.Command_Line.Command_Name & " --serial-port=<serial port path>";
