@@ -67,6 +67,8 @@ package body Fans is
          end case;
       end Init_Tach;
    begin
+      Init_Checker.Report_Init_Started;
+
       STM32.SYSCFG.Enable_SYSCFG_Clock;
       --  For comparators.
 
@@ -86,15 +88,21 @@ package body Fans is
 
          Init_Tach (Tach_Configs (Fan));
       end loop;
+
+      Init_Checker.Report_Init_Done;
    end Init;
 
    procedure Set_PWM (Fan : Fan_Name; Scale : Fixed_Point_PWM_Scale) is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       Set_Compare_Value (Fan_Timers (Fan).all, Fan_Timer_Channels (Fan), UInt16 (Float (Scale) * 60_001.0));
    end Set_PWM;
 
    function Get_PWM (Fan : Fan_Name) return PWM_Scale is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       return
         Dimensionless'Min
           (Dimensionless (UInt16'(Current_Capture_Value (Fan_Timers (Fan).all, Fan_Timer_Channels (Fan)))) / 60_001.0,
@@ -103,6 +111,8 @@ package body Fans is
 
    function Get_Tach_Counter (Fan : Fan_Name) return Tach_Counter is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       case Tach_Configs (Fan).Kind is
          when Timer_Kind =>
             return Tach_Counter (Current_Counter (Tach_Configs (Fan).Tim.all) mod 2**16);

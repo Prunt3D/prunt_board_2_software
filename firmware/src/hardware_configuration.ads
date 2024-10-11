@@ -57,6 +57,7 @@ package Hardware_Configuration is
      (Stepper_1 => PB11, Stepper_2 => PC5, Stepper_3 => PC12, Stepper_4 => PC14, Stepper_5 => PB6, Stepper_6 => PC3);
    Stepper_DIAG0_Points  : array (Stepper_Name) of GPIO_Point :=
      (Stepper_1 => PA12, Stepper_2 => PA13, Stepper_3 => PC13, Stepper_4 => PC15, Stepper_5 => PB3, Stepper_6 => PA2);
+   --  TODO: Change the GPIO package so we can make the above constant.
 
    --  Input_Switches
 
@@ -95,8 +96,9 @@ package Hardware_Configuration is
    High_Power_Switch_ADC          : Analog_To_Digital_Converter renames ADC_1;
    High_Power_Switch_ADC_Internal : aliased STM32_SVD.ADC.ADC1_Peripheral with
      Volatile, Import, Address => STM32_SVD.ADC1_Base;
-   High_Power_Switch_Output_Point : constant GPIO_Point           := PB5;
-   High_Power_Switch_Input_Point  : constant GPIO_Point           := PC1;
+   High_Power_Switch_Output_Point : GPIO_Point                    := PB5;
+   High_Power_Switch_Input_Point  : GPIO_Point                    := PC1;
+   --  TODO: Change the GPIO package so we can make the above constant.
    High_Power_Switch_ADC_Channel  : constant Analog_Input_Channel := 7;
 
    --  Thermistors

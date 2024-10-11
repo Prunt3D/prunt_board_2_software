@@ -34,6 +34,11 @@ package body Init_Checkers is
             raise Constraint_Error with "Init not done.";
          end if;
       end Raise_If_Init_Not_Done;
+
+      function Is_Init_Done return Boolean is
+      begin
+         return Init_Done;
+      end Is_Init_Done;
    end Init_Checker;
 
 end Init_Checkers;

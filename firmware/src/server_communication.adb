@@ -23,6 +23,8 @@ package body Server_Communication is
 
    procedure Init is
    begin
+      Init_Checker.Report_Init_Started;
+
       Enable_Clock (Comms_UART_DMA_RX_Controller);
       Enable_Clock (Comms_UART);
       Enable_Clock (Comms_CRC_Unit);
@@ -54,12 +56,12 @@ package body Server_Communication is
           AF_Speed       => Speed_100MHz,
           AF             => Comms_UART_RX_Pin_AF));
 
-      Init_Done := True;
+      Init_Checker.Report_Init_Done;
    end Init;
 
    function Is_Init_Done return Boolean is
    begin
-      return Init_Done;
+      return Init_Checker.Is_Init_Done;
    end Is_Init_Done;
 
    procedure Run is
@@ -77,6 +79,8 @@ package body Server_Communication is
       In_Conditional_Skip_Mode : Boolean       := False;
       Setup_Done               : Boolean       := False;
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       --  Ensure nothing is transmitting junk.
       loop
          delay until Clock + Seconds (1);
@@ -426,6 +430,8 @@ package body Server_Communication is
 
    procedure Transmit_Fatal_Exception_Mark is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       loop
          exit when Tx_Ready (Comms_UART);
       end loop;
@@ -435,6 +441,8 @@ package body Server_Communication is
 
    procedure Transmit_String (S : String) is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       for C of S loop
          loop
             exit when Tx_Ready (Comms_UART);
@@ -450,6 +458,8 @@ package body Server_Communication is
 
    procedure Transmit_String_Line (S : String) is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       Transmit_String (S);
       Transmit_String ("" & Ada.Characters.Latin_1.LF);
    end Transmit_String_Line;

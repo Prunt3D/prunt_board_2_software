@@ -1,4 +1,5 @@
 with Messages; use Messages;
+with Init_Checkers;
 
 package Server_Communication is
 
@@ -14,8 +15,7 @@ package Server_Communication is
 
 private
 
-   Init_Done : Boolean := False with
-     Atomic, Volatile;
+   Init_Checker : Init_Checkers.Init_Checker;
 
    RX_Message : aliased Message_From_Server with
      Alignment => 4, Volatile;

@@ -4,6 +4,7 @@ with STM32.HRTimers;         use STM32.HRTimers;
 with STM32.Device;           use STM32.Device;
 with Messages;               use Messages;
 with Hardware_Configuration; use Hardware_Configuration;
+with Init_Checkers;
 
 package Step_Generator is
 
@@ -19,6 +20,8 @@ package Step_Generator is
    Empty_Buffer_Error : exception;
 
 private
+
+   Init_Checker : Init_Checkers.Init_Checker;
 
    use HAL;
 

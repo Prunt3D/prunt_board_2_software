@@ -10,6 +10,8 @@ package body Steppers is
 
    procedure Init is
    begin
+      Init_Checker.Report_Init_Started;
+
       Enable_Clock (TMC_UART);
       Enable_Clock (TMC_UART_DMA_RX_Controller);
 
@@ -38,7 +40,7 @@ package body Steppers is
       delay until Clock + Milliseconds (10);
 
       for S in Stepper_Name loop
-         Disable (S);
+         Set (Stepper_Enable_Points (S));
          Configure_IO
            (Stepper_Enable_Points (S),
             (Mode => Mode_Out, Resistors => Floating, Output_Type => Push_Pull, Speed => Speed_100MHz));
@@ -85,15 +87,21 @@ package body Steppers is
             Result => Error);
          Clear_All_Status (TMC_UART_DMA_RX_Controller, TMC_UART_DMA_RX_Stream);
       end;
+
+      Init_Checker.Report_Init_Done;
    end Init;
 
    procedure Enable (Stepper : Stepper_Name) is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       Clear (Stepper_Enable_Points (Stepper));
    end Enable;
 
    procedure Disable (Stepper : Stepper_Name) is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       Set (Stepper_Enable_Points (Stepper));
    end Disable;
 
@@ -103,6 +111,8 @@ package body Steppers is
       Output         : out TMC2240_UART_Data_Byte_Array)
    is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       Receive_Failed := False;
 
       while Rx_Ready (TMC_UART) or TMC_UART_Internal.ISR.BUSY loop
@@ -150,6 +160,8 @@ package body Steppers is
 
    procedure UART_Write (Input : TMC2240_UART_Data_Byte_Array) is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       while Rx_Ready (TMC_UART) or TMC_UART_Internal.ISR.BUSY loop
          declare
             Junk : UInt9 := TMC_UART_Internal.RDR.RDR;

@@ -9,6 +9,8 @@ package body High_Power_Switch is
 
    procedure Init is
    begin
+      Init_Checker.Report_Init_Started;
+
       Enable_Clock (High_Power_Switch_ADC);
 
       Disable (High_Power_Switch_ADC);
@@ -34,15 +36,19 @@ package body High_Power_Switch is
          Trigger     => Software_Triggered,
          Conversions => (1 => (Channel => High_Power_Switch_ADC_Channel, Sample_Time => Sample_640P5_Cycles)));
 
-      High_Power_Switch.Disable;
+      Clear (High_Power_Switch_Output_Point);
       Configure_IO
         (High_Power_Switch_Output_Point,
          (Mode => Mode_Out, Resistors => Floating, Output_Type => Push_Pull, Speed => Speed_25MHz));
       Configure_IO (High_Power_Switch_Input_Point, (Mode => Mode_Analog, Resistors => Floating));
+
+      Init_Checker.Report_Init_Done;
    end Init;
 
    procedure Wait_For_Power_Good is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       Enable (High_Power_Switch_ADC);
 
       declare
@@ -69,12 +75,16 @@ package body High_Power_Switch is
 
    procedure Enable is
    begin
-      Set (PB5);
+      Init_Checker.Raise_If_Init_Not_Done;
+
+      Set (High_Power_Switch_Output_Point);
    end Enable;
 
    procedure Disable is
    begin
-      Clear (PB5);
+      Init_Checker.Raise_If_Init_Not_Done;
+
+      Clear (High_Power_Switch_Output_Point);
    end Disable;
 
 end High_Power_Switch;

@@ -50,6 +50,8 @@ package body Step_Generator is
          AF_Speed       => Speed_100MHz,
          AF             => GPIO_AF_HRTIM1_3);
    begin
+      Init_Checker.Report_Init_Started;
+
       Enable_Clock (STM32.Device.HRTimer_M);
       Enable_Clock (STM32.Device.HRTimer_A);
       Enable_Clock (STM32.Device.HRTimer_B);
@@ -97,10 +99,14 @@ package body Step_Generator is
       Configure_IO (PA9, Port_Config_AF_13);
       Configure_IO (PA10, Port_Config_AF_13);
       Configure_IO (PA11, Port_Config_AF_13);
+
+      Init_Checker.Report_Init_Done;
    end Init;
 
    procedure Enqueue (Steps : Step_Delta) is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       --  TODO: Ensure that a loop move does exceed the length of the buffer.
 
       if Buffer_Ran_Dry then
@@ -124,12 +130,16 @@ package body Step_Generator is
 
    procedure Setup_Loop (Input_Switch : Input_Switch_Name; Until_State : Input_Switch_State) is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       Loop_Input_Switch := Input_Switch;
       Loop_Until_State  := Until_State;
    end Setup_Loop;
 
    procedure Enqueue_Start_Loop is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       if Step_Delta_Buffer_Loop_Enabled then
          raise Constraint_Error with "Tried to start loop when loop is already running.";
       end if;
@@ -139,6 +149,8 @@ package body Step_Generator is
 
    procedure Enqueue_Stop_Loop is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       if Step_Delta_Buffer_Writer_Index = Step_Delta_Buffer_Loop_Start_Index then
          raise Constraint_Error with "Loop has no moves.";
       end if;
@@ -149,6 +161,8 @@ package body Step_Generator is
 
    function Check_If_Idle return Boolean is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       if Is_Idle and then Step_Delta_Buffer_Reader_Index /= Step_Delta_Buffer_Writer_Index then
          Is_Idle := False;
       end if;
@@ -158,6 +172,8 @@ package body Step_Generator is
 
    procedure Force_Start is
    begin
+      Init_Checker.Raise_If_Init_Not_Done;
+
       if Is_Idle and then Step_Delta_Buffer_Reader_Index /= Step_Delta_Buffer_Writer_Index then
          Is_Idle := False;
       end if;
