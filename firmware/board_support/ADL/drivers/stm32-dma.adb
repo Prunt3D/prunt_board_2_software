@@ -400,8 +400,6 @@ package body STM32.DMA is
             Result := DMA_Timeout_Error;
             return;
          end if;
-
-         delay until Clock;
       end loop Polling;
 
       Clear_Status (This, Stream, Half_Transfer_Complete_Indicated);

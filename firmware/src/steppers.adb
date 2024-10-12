@@ -22,8 +22,8 @@ package body Steppers is
       Set_Stop_Bits (TMC_UART, Stopbits_1);
       Set_Flow_Control (TMC_UART, No_Flow_Control);
       Set_Baud_Rate (TMC_UART, 19_200);
-      TMC_UART_Internal.CR1.FIFOEN  := True;
-      TMC_UART_Internal.CR3.HDSEL   := True;
+      TMC_UART_Internal.CR1.FIFOEN := True;
+      TMC_UART_Internal.CR3.HDSEL  := True;
 
       Enable (TMC_UART);
 
@@ -81,10 +81,7 @@ package body Steppers is
          Error : DMA_Error_Code;
       begin
          delay until Clock + Milliseconds (10);
-         Abort_Transfer
-           (This   => TMC_UART_DMA_RX_Controller,
-            Stream => TMC_UART_DMA_RX_Stream,
-            Result => Error);
+         Abort_Transfer (This => TMC_UART_DMA_RX_Controller, Stream => TMC_UART_DMA_RX_Stream, Result => Error);
          Clear_All_Status (TMC_UART_DMA_RX_Controller, TMC_UART_DMA_RX_Stream);
       end;
 
@@ -105,86 +102,97 @@ package body Steppers is
       Set (Stepper_Enable_Points (Stepper));
    end Disable;
 
-   procedure UART_Read
-     (Input          :     TMC2240_UART_Query_Byte_Array;
-      Receive_Failed : out Byte_Boolean;
-      Output         : out TMC2240_UART_Data_Byte_Array)
-   is
-   begin
-      Init_Checker.Raise_If_Init_Not_Done;
-
-      Receive_Failed := False;
-
-      while Rx_Ready (TMC_UART) or TMC_UART_Internal.ISR.BUSY loop
-         declare
-            Junk : UInt9 := TMC_UART_Internal.RDR.RDR;
-         begin
-            Server_Communication.Transmit_String_Line
-              ("Unexpected data on TMC UART before read (" & Junk'Image & ").");
-         end;
-      end loop;
-
-      --  STM32G474 has a 8 byte FIFO (Table 345, RM0440 Rev 8), so no need for DMA here.
-      TMC_UART_Internal.CR1.TE := False;
-      for Byte of Input loop
-         Transmit (TMC_UART, UInt9 (Byte));
-      end loop;
-
-      Start_Transfer
-        (This        => TMC_UART_DMA_RX_Controller,
-         Stream      => TMC_UART_DMA_RX_Stream,
-         Source      => Read_Data_Register_Address (TMC_UART),
-         Destination => RX_Buffer'Address,
-         Data_Count  => RX_Buffer'Length);
-      TMC_UART_Internal.CR1.TE := True;
-
-      declare
-         Error : DMA_Error_Code;
+   protected body UART_IO is
+      entry Start_Read (Input : TMC2240_UART_Query_Byte_Array) when not Read_Started is
       begin
-         Poll_For_Completion
-           (This           => TMC_UART_DMA_RX_Controller,
-            Stream         => TMC_UART_DMA_RX_Stream,
-            Expected_Level => Full_Transfer,
-            Timeout        => Milliseconds (100),
-            Result         => Error);
+         Init_Checker.Raise_If_Init_Not_Done;
 
-         if Error /= DMA_No_Error then
-            Receive_Failed := True;
-         end if;
-      end;
+         Read_Started := True;
 
-      for I in 1 .. 8 loop
-         Output (I) := TMC2240_UART_Byte (RX_Buffer (I + 4));
-      end loop;
-   end UART_Read;
+         Init_Checker.Raise_If_Init_Not_Done;
 
-   procedure UART_Write (Input : TMC2240_UART_Data_Byte_Array) is
-   begin
-      Init_Checker.Raise_If_Init_Not_Done;
+         while Rx_Ready (TMC_UART) or TMC_UART_Internal.ISR.BUSY loop
+            declare
+               Junk : UInt9 := TMC_UART_Internal.RDR.RDR;
+            begin
+               Server_Communication.Transmit_String_Line
+                 ("Unexpected data on TMC UART before read (" & Junk'Image & ").");
+            end;
+         end loop;
 
-      while Rx_Ready (TMC_UART) or TMC_UART_Internal.ISR.BUSY loop
+         --  STM32G474 has a 8 byte FIFO (Table 345, RM0440 Rev 8), so no need for DMA here.
+         TMC_UART_Internal.CR1.TE := False;
+         for Byte of Input loop
+            Transmit (TMC_UART, UInt9 (Byte));
+         end loop;
+
+         Start_Transfer
+           (This        => TMC_UART_DMA_RX_Controller,
+            Stream      => TMC_UART_DMA_RX_Stream,
+            Source      => Read_Data_Register_Address (TMC_UART),
+            Destination => RX_Buffer'Address,
+            Data_Count  => RX_Buffer'Length);
+         TMC_UART_Internal.CR1.TE := True;
+      end Start_Read;
+
+      entry Get_Read_Result (Receive_Failed : out Byte_Boolean; Output : out TMC2240_UART_Data_Byte_Array)
+        when Read_Started
+      is
+      begin
+         Init_Checker.Raise_If_Init_Not_Done;
+
+         Read_Started := False;
+
          declare
-            Junk : UInt9 := TMC_UART_Internal.RDR.RDR;
+            Error : DMA_Error_Code;
          begin
-            Server_Communication.Transmit_String_Line
-              ("Unexpected data on TMC UART before write (" & Junk'Image & ").");
+            Poll_For_Completion
+              (This           => TMC_UART_DMA_RX_Controller,
+               Stream         => TMC_UART_DMA_RX_Stream,
+               Expected_Level => Full_Transfer,
+               Timeout        => Milliseconds (100),
+               Result         => Error);
+
+            if Error /= DMA_No_Error then
+               Receive_Failed := True;
+            else
+               Receive_Failed := False;
+            end if;
          end;
-      end loop;
 
-      --  STM32G474 has a 8 byte FIFO (Table 345, RM0440 Rev 8), so no need for DMA here.
-      TMC_UART_Internal.CR1.TE := False;
-      TMC_UART_Internal.CR1.RE := False;
-      for Byte of Input loop
-         Transmit (TMC_UART, UInt9 (Byte));
-      end loop;
-      TMC_UART_Internal.CR1.TE := True;
+         for I in 1 .. 8 loop
+            Output (I) := TMC2240_UART_Byte (RX_Buffer (I + 4));
+         end loop;
+      end Get_Read_Result;
 
-      --  Keep the receiver off until the transmission is done.
-      --  TODO: We could verify the written data here.
-      loop
-         exit when TMC_UART_Internal.ISR.TXFE and TMC_UART_Internal.ISR.TC;
-      end loop;
-      TMC_UART_Internal.CR1.RE := True;
-   end UART_Write;
+      entry Write (Input : TMC2240_UART_Data_Byte_Array) when not Read_Started is
+      begin
+         Init_Checker.Raise_If_Init_Not_Done;
+
+         while Rx_Ready (TMC_UART) or TMC_UART_Internal.ISR.BUSY loop
+            declare
+               Junk : UInt9 := TMC_UART_Internal.RDR.RDR;
+            begin
+               Server_Communication.Transmit_String_Line
+                 ("Unexpected data on TMC UART before write (" & Junk'Image & ").");
+            end;
+         end loop;
+
+         --  STM32G474 has a 8 byte FIFO (Table 345, RM0440 Rev 8), so no need for DMA here.
+         TMC_UART_Internal.CR1.TE := False;
+         TMC_UART_Internal.CR1.RE := False;
+         for Byte of Input loop
+            Transmit (TMC_UART, UInt9 (Byte));
+         end loop;
+         TMC_UART_Internal.CR1.TE := True;
+
+         --  Keep the receiver off until the transmission is done.
+         --  TODO: We could verify the written data here.
+         loop
+            exit when TMC_UART_Internal.ISR.TXFE and TMC_UART_Internal.ISR.TC;
+         end loop;
+         TMC_UART_Internal.CR1.RE := True;
+      end Write;
+   end UART_IO;
 
 end Steppers;

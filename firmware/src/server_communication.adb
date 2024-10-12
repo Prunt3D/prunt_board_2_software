@@ -258,13 +258,12 @@ package body Server_Communication is
                         In_Conditional_Skip_Mode := True;
                      end if;
                   when TMC_Write_Kind =>
-                     Steppers.UART_Write (RX_Message.Content.TMC_Write_Data);
+                     Steppers.UART_IO.Write (RX_Message.Content.TMC_Write_Data);
                   when TMC_Read_Kind =>
                      Set_TX_Message_Kind (TMC_Read_Reply_Kind);
-                     Steppers.UART_Read
-                       (RX_Message.Content.TMC_Read_Data,
-                        TX_Message.Content.TMC_Receive_Failed,
-                        TX_Message.Content.TMC_Data);
+                     Steppers.UART_IO.Start_Read (RX_Message.Content.TMC_Read_Data);
+                     Steppers.UART_IO.Get_Read_Result
+                       (TX_Message.Content.TMC_Receive_Failed, TX_Message.Content.TMC_Data);
                   when Status_Kind =>
                      null;
                   when Check_If_Idle_Kind =>
