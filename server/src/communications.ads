@@ -15,6 +15,11 @@ package Communications is
 
    UART_Timeout_Error : exception;
 
+   protected TMC_IO is
+      procedure Read (Message : TMC2240_UART_Query_Byte_Array; Reply : out TMC2240_UART_Data_Byte_Array);
+      procedure Write (Message : TMC2240_UART_Data_Byte_Array);
+   end TMC_IO;
+
    task Runner with
      CPU => Runner_CPU
    is
@@ -23,5 +28,25 @@ package Communications is
       entry Send_Message_And_Wait_For_Reply
         (Content : Message_From_Server_Content; Reply : out Message_From_Client_Content);
    end Runner;
+
+private
+
+   TMC_Query         : TMC2240_UART_Query_Byte_Array with
+     Volatile;
+   TMC_Query_Waiting : Boolean with
+     Volatile, Atomic;
+
+   TMC_Write         : TMC2240_UART_Data_Byte_Array with
+     Volatile;
+   TMC_Write_Waiting : Boolean with
+     Volatile, Atomic;
+
+   TMC_Reply         : TMC2240_UART_Data_Byte_Array with
+     Volatile;
+   TMC_Reply_Waiting : Boolean with
+     Volatile, Atomic;
+
+   --  We avoid using a protected object for the above as the Runner task accesses them and it is crucial that the
+   --  Runner task never blocks on anything other than waiting for a message or reply to maximise reliability.
 
 end Communications;

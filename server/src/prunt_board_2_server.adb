@@ -154,20 +154,31 @@ procedure Prunt_Board_2_Server is
 
       for H in Heater_Name loop
          Message :=
-           (Kind          => Heater_Reconfigure_Kind,
-            Index         => <>,
-            Heater        => H,
-            Heater_Params => (Kind => Disabled_Kind, others => <>));
+           (Kind           => Heater_Reconfigure_Kind,
+            Index          => <>,
+            TMC_Write_Data => (others => 0),
+            TMC_Read_Data  => (others => 0),
+            Heater         => H,
+            Heater_Params  => (Kind => Disabled_Kind, others => <>));
          My_Communications.Runner.Send_Message (Message);
       end loop;
 
-      Message := (Kind => Enable_High_Power_Switch_Kind, Index => <>);
+      Message :=
+        (Kind           => Enable_High_Power_Switch_Kind,
+         Index          => <>,
+         TMC_Write_Data => (others => 0),
+         TMC_Read_Data  => (others => 0));
       My_Communications.Runner.Send_Message (Message);
    end Setup;
 
    procedure Reconfigure_Heater (Heater : Heater_Name; Params : Prunt.Heaters.Heater_Parameters) is
       Message : Message_From_Server_Content :=
-        (Kind => Heater_Reconfigure_Kind, Index => <>, Heater => Heater, Heater_Params => <>);
+        (Kind           => Heater_Reconfigure_Kind,
+         Index          => <>,
+         TMC_Write_Data => (others => 0),
+         TMC_Read_Data  => (others => 0),
+         Heater         => Heater,
+         Heater_Params  => <>);
    begin
       case Params.Kind is
          when Prunt.Heaters.Disabled_Kind =>
@@ -213,12 +224,22 @@ procedure Prunt_Board_2_Server is
 
    procedure Enable_Stepper (Stepper : Stepper_Name) is
    begin
-      My_Communications.Runner.Send_Message ((Kind => Enable_Stepper_Kind, Index => <>, Stepper => Stepper));
+      My_Communications.Runner.Send_Message
+        ((Kind           => Enable_Stepper_Kind,
+          Index          => <>,
+          TMC_Write_Data => (others => 0),
+          TMC_Read_Data  => (others => 0),
+          Stepper        => Stepper));
    end Enable_Stepper;
 
    procedure Disable_Stepper (Stepper : Stepper_Name) is
    begin
-      My_Communications.Runner.Send_Message ((Kind => Disable_Stepper_Kind, Index => <>, Stepper => Stepper));
+      My_Communications.Runner.Send_Message
+        ((Kind           => Disable_Stepper_Kind,
+          Index          => <>,
+          TMC_Write_Data => (others => 0),
+          TMC_Read_Data  => (others => 0),
+          Stepper        => Stepper));
    end Disable_Stepper;
 
    procedure Setup_For_Loop_Move (Switch : Input_Switch_Name; Hit_State : Pin_State) is
@@ -226,6 +247,8 @@ procedure Prunt_Board_2_Server is
       My_Communications.Runner.Send_Message
         ((Kind              => Loop_Setup_Kind,
           Index             => <>,
+          TMC_Write_Data    => (others => 0),
+          TMC_Read_Data     => (others => 0),
           Loop_Input_Switch => Switch,
           Loop_Until_State  => (if Hit_State = Low_State then Low else High)));
    end Setup_For_Loop_Move;
@@ -235,6 +258,8 @@ procedure Prunt_Board_2_Server is
       My_Communications.Runner.Send_Message
         ((Kind                  => Condition_Check_Kind,
           Index                 => <>,
+          TMC_Write_Data        => (others => 0),
+          TMC_Read_Data         => (others => 0),
           Conditon_Input_Switch => Switch,
           Skip_If_Hit_State     => (if Hit_State = Low_State then Low else High)));
    end Setup_For_Conditional_Move;
@@ -248,6 +273,8 @@ procedure Prunt_Board_2_Server is
    Step_Delta_Message : aliased Message_From_Server_Content :=
      (Kind            => Regular_Step_Delta_List_Kind,
       Index           => <>,
+      TMC_Write_Data  => (others => 0),
+      TMC_Read_Data   => (others => 0),
       Last_Index      => Step_Delta_List_Index'First,
       Fan_Targets     => (others => 0.0),
       Heater_Targets  => (others => Fixed_Point_Celcius'First),
@@ -262,6 +289,8 @@ procedure Prunt_Board_2_Server is
          Step_Delta_Message :=
            (Kind            => Regular_Step_Delta_List_Kind,
             Index           => <>,
+            TMC_Write_Data  => (others => 0),
+            TMC_Read_Data   => (others => 0),
             Last_Index      => Step_Delta_List_Index'First,
             Fan_Targets     => (others => 0.0),
             Heater_Targets  => (others => Fixed_Point_Celcius'First),
@@ -289,6 +318,8 @@ procedure Prunt_Board_2_Server is
          Step_Delta_Message :=
            (Kind            => Looping_Step_Delta_List_Kind,
             Index           => <>,
+            TMC_Write_Data  => (others => 0),
+            TMC_Read_Data   => (others => 0),
             Last_Index      => Step_Delta_List_Index'First + Loop_Move_Multiplier - 1,
             Fan_Targets     => (others => 0.0),
             Heater_Targets  => (others => Fixed_Point_Celcius'First),
@@ -380,18 +411,20 @@ procedure Prunt_Board_2_Server is
       end loop;
 
       loop
-         My_Communications.Runner.Send_Message_And_Wait_For_Reply ((Kind => Check_If_Idle_Kind, Index => <>), Reply);
+         My_Communications.Runner.Send_Message_And_Wait_For_Reply
+           ((Kind           => Check_If_Idle_Kind,
+             Index          => <>,
+             TMC_Write_Data => (others => 0),
+             TMC_Read_Data  => (others => 0)),
+            Reply);
          exit when Reply.Condition_Met;
       end loop;
    end Wait_Until_Idle;
 
    procedure TMC_Write (Message : Prunt.TMC_Types.TMC2240.UART_Data_Byte_Array) is
    begin
-      My_Communications.Runner.Send_Message
-        ((Kind           => TMC_Write_Kind,
-          Index          => <>,
-          TMC_Write_Data =>
-            (for I in Messages.TMC2240_UART_Data_Byte_Array'Range => Messages.TMC2240_UART_Byte (Message (9 - I)))));
+      My_Communications.TMC_IO.Write
+        ((for I in Messages.TMC2240_UART_Data_Byte_Array'Range => Messages.TMC2240_UART_Byte (Message (9 - I))));
    end TMC_Write;
 
    procedure TMC_Read
@@ -399,21 +432,17 @@ procedure Prunt_Board_2_Server is
       Receive_Failed : out Boolean;
       Reply          : out Prunt.TMC_Types.TMC2240.UART_Data_Byte_Array)
    is
-      Client_Reply : Message_From_Client_Content;
+      TMC_Reply         : TMC2240_UART_Data_Byte_Array;
    begin
-      My_Communications.Runner.Send_Message_And_Wait_For_Reply
-        ((Kind          => TMC_Read_Kind,
-          Index         => <>,
-          TMC_Read_Data =>
-           (for I in Messages.TMC2240_UART_Query_Byte_Array'Range => Messages.TMC2240_UART_Byte (Message (5 - I)))),
-         Client_Reply);
+      My_Communications.TMC_IO.Read
+        ((for I in Messages.TMC2240_UART_Query_Byte_Array'Range => Messages.TMC2240_UART_Byte (Message (5 - I))),
+         TMC_Reply);
 
-      if Client_Reply.Kind /= TMC_Read_Reply_Kind then
-         raise Constraint_Error with "Received wrong reply type.";
+      Receive_Failed := TMC_Reply (1) /= 2#00000101#;
+      if Receive_Failed then
+         raise Constraint_Error with TMC_Reply (1)'Image;
       end if;
-
-      Receive_Failed := Boolean (Client_Reply.TMC_Receive_Failed);
-      Reply := (for I in Reply'Range => Prunt.TMC_Types.TMC2240.UART_Byte (Client_Reply.TMC_Data (9 - I)));
+      Reply := (for I in Reply'Range => Prunt.TMC_Types.TMC2240.UART_Byte (TMC_Reply (9 - I)));
    end TMC_Read;
 
    procedure Autotune_Heater (Heater : Heater_Name; Params : Prunt.Heaters.Heater_Parameters) is
@@ -423,7 +452,12 @@ procedure Prunt_Board_2_Server is
 
       loop
          My_Communications.Runner.Send_Message_And_Wait_For_Reply
-           ((Kind => Check_If_Heater_Autotune_Done_Kind, Index => <>, Heater_To_Check => Heater), Reply);
+           ((Kind            => Check_If_Heater_Autotune_Done_Kind,
+             Index           => <>,
+             TMC_Write_Data  => (others => 0),
+             TMC_Read_Data   => (others => 0),
+             Heater_To_Check => Heater),
+            Reply);
          exit when Reply.Condition_Met;
       end loop;
    end Autotune_Heater;

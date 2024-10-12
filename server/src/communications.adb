@@ -6,6 +6,41 @@ with Embedded_Resources;
 
 package body Communications is
 
+   protected body TMC_IO is
+      procedure Read (Message : TMC2240_UART_Query_Byte_Array; Reply : out TMC2240_UART_Data_Byte_Array) is
+      begin
+         pragma Assert (not TMC_Query_Waiting);
+         pragma Assert (not TMC_Write_Waiting);
+         pragma Assert (not TMC_Reply_Waiting);
+
+         TMC_Query         := Message;
+         TMC_Query_Waiting := True;
+
+         loop
+            exit when TMC_Reply_Waiting;
+            delay 0.02;
+         end loop;
+
+         Reply             := TMC_Reply;
+         TMC_Reply_Waiting := False;
+      end Read;
+
+      procedure Write (Message : TMC2240_UART_Data_Byte_Array) is
+      begin
+         pragma Assert (not TMC_Query_Waiting);
+         pragma Assert (not TMC_Write_Waiting);
+         pragma Assert (not TMC_Reply_Waiting);
+
+         TMC_Write         := Message;
+         TMC_Write_Waiting := True;
+
+         loop
+            exit when not TMC_Write_Waiting;
+            delay 0.02;
+         end loop;
+      end Write;
+   end TMC_IO;
+
    task body Runner is
       Port : GNAT.Serial_Communications.Serial_Port;
 
@@ -193,6 +228,20 @@ package body Communications is
       begin
          pragma Assert (Message_Bytes'Size = Message'Size);
 
+         if Message.Content.TMC_Read_Data /= TMC2240_UART_Query_Byte_Array'(others => 0) or
+           Message.Content.TMC_Write_Data /= TMC2240_UART_Data_Byte_Array'(others => 0)
+         then
+            raise Constraint_Error with "TMC data can not be manually placed in a server message.";
+         end if;
+
+         if TMC_Query_Waiting then
+            Message.Content.TMC_Read_Data := TMC_Query;
+            TMC_Query_Waiting             := False;
+         elsif TMC_Write_Waiting then
+            Message.Content.TMC_Write_Data := TMC_Write;
+            TMC_Write_Waiting              := False;
+         end if;
+
          if Message.Content.Kind in Regular_Step_Delta_List_Kind | Looping_Step_Delta_List_Kind then
             In_Safe_Stop_State := Message.Content.Safe_Stop_After = True;
          end if;
@@ -240,6 +289,12 @@ package body Communications is
             for S in Input_Switch_Name loop
                Report_Input_Switch_State (S, Reply.Content.Switches (S));
             end loop;
+
+            if Reply.Content.TMC_Data (1) /= 0 then
+               pragma Assert (not TMC_Reply_Waiting);
+               TMC_Reply         := Reply.Content.TMC_Data;
+               TMC_Reply_Waiting := True;
+            end if;
 
             --  for F in Fan_Name loop
             --     Log (F'Image & Reply.Content.Tachs (F)'Image);
