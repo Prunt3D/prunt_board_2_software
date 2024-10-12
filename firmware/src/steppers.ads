@@ -1,5 +1,6 @@
-with Messages; use Messages;
-with HAL;      use HAL;
+with Messages;      use Messages;
+with HAL;           use HAL;
+with Ada.Real_Time; use Ada.Real_Time;
 with Init_Checkers;
 
 package Steppers is
@@ -9,11 +10,16 @@ package Steppers is
    procedure Disable (Stepper : Stepper_Name);
 
    protected UART_IO is
-      entry Start_Read (Input : TMC2240_UART_Query_Byte_Array);
-      entry Get_Read_Result (Receive_Failed : out Byte_Boolean; Output : out TMC2240_UART_Data_Byte_Array);
-      entry Write (Input : TMC2240_UART_Data_Byte_Array);
+      procedure Start_Read (Input : TMC2240_UART_Query_Byte_Array);
+      function Read_Result_Ready return Boolean;
+
+      procedure Get_Read_Result (Output : out TMC2240_UART_Data_Byte_Array);
+      -- Sets Output to (others => 255) in case of a timeout. This can just be interpreted as a corrupted message.
+
+      procedure Write (Input : TMC2240_UART_Data_Byte_Array);
    private
-      Read_Started : Boolean := False;
+      Read_Started    : Boolean := False;
+      Read_Start_Time : Time    := Clock;
    end UART_IO;
 
 private

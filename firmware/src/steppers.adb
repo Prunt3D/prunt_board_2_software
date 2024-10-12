@@ -103,13 +103,21 @@ package body Steppers is
    end Disable;
 
    protected body UART_IO is
-      entry Start_Read (Input : TMC2240_UART_Query_Byte_Array) when not Read_Started is
+      procedure Start_Read (Input : TMC2240_UART_Query_Byte_Array) is
       begin
          Init_Checker.Raise_If_Init_Not_Done;
 
+         if Read_Started then
+            raise Constraint_Error with "Read already started.";
+         end if;
+
          Read_Started := True;
 
-         Init_Checker.Raise_If_Init_Not_Done;
+         --  Keep the receiver off until the transmission is done in case a write just happened.
+         loop
+            exit when TMC_UART_Internal.ISR.TXFE and TMC_UART_Internal.ISR.TC;
+         end loop;
+         TMC_UART_Internal.CR1.RE := True;
 
          while Rx_Ready (TMC_UART) or TMC_UART_Internal.ISR.BUSY loop
             declare
@@ -133,13 +141,26 @@ package body Steppers is
             Destination => RX_Buffer'Address,
             Data_Count  => RX_Buffer'Length);
          TMC_UART_Internal.CR1.TE := True;
+
+         Read_Start_Time := Clock;
       end Start_Read;
 
-      entry Get_Read_Result (Receive_Failed : out Byte_Boolean; Output : out TMC2240_UART_Data_Byte_Array)
-        when Read_Started
-      is
+      function Read_Result_Ready return Boolean is
+      begin
+         return
+           Read_Started
+           and then
+           (Status (TMC_UART_DMA_RX_Controller, TMC_UART_DMA_RX_Stream, Transfer_Complete_Indicated)
+            or else Clock > Read_Start_Time + Milliseconds (100));
+      end Read_Result_Ready;
+
+      procedure Get_Read_Result (Output : out TMC2240_UART_Data_Byte_Array) is
       begin
          Init_Checker.Raise_If_Init_Not_Done;
+
+         if not Read_Started then
+            raise Constraint_Error with "No read started.";
+         end if;
 
          Read_Started := False;
 
@@ -150,13 +171,12 @@ package body Steppers is
               (This           => TMC_UART_DMA_RX_Controller,
                Stream         => TMC_UART_DMA_RX_Stream,
                Expected_Level => Full_Transfer,
-               Timeout        => Milliseconds (100),
+               Timeout        => Read_Start_Time + Milliseconds (100) - Clock,
                Result         => Error);
 
             if Error /= DMA_No_Error then
-               Receive_Failed := True;
-            else
-               Receive_Failed := False;
+               Output := (others => 255);
+               --  Put a known bad message on the output to indicate an error.
             end if;
          end;
 
@@ -165,9 +185,13 @@ package body Steppers is
          end loop;
       end Get_Read_Result;
 
-      entry Write (Input : TMC2240_UART_Data_Byte_Array) when not Read_Started is
+      procedure Write (Input : TMC2240_UART_Data_Byte_Array) is
       begin
          Init_Checker.Raise_If_Init_Not_Done;
+
+         if Read_Started then
+            raise Constraint_Error with "Can not write with pending read.";
+         end if;
 
          while Rx_Ready (TMC_UART) or TMC_UART_Internal.ISR.BUSY loop
             declare
@@ -185,13 +209,6 @@ package body Steppers is
             Transmit (TMC_UART, UInt9 (Byte));
          end loop;
          TMC_UART_Internal.CR1.TE := True;
-
-         --  Keep the receiver off until the transmission is done.
-         --  TODO: We could verify the written data here.
-         loop
-            exit when TMC_UART_Internal.ISR.TXFE and TMC_UART_Internal.ISR.TC;
-         end loop;
-         TMC_UART_Internal.CR1.RE := True;
       end Write;
    end UART_IO;
 

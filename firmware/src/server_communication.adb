@@ -204,6 +204,17 @@ package body Server_Communication is
                TX_Message.Content.Index := Last_Message_Index;
                Set_TX_Message_Kind (Status_Kind);
 
+               if RX_Message.Content.Kind not in
+                   Firmware_Update_Start_Kind | Firmware_Update_Data_Kind | Firmware_Update_Done_Kind
+               then
+                  if RX_Message.Content.TMC_Write_Data (1) /= 0 then
+                     Steppers.UART_IO.Write (RX_Message.Content.TMC_Write_Data);
+                  end if;
+                  if RX_Message.Content.TMC_Read_Data (1) /= 0 then
+                     Steppers.UART_IO.Start_Read (RX_Message.Content.TMC_Read_Data);
+                  end if;
+               end if;
+
                case RX_Message.Content.Kind is
                   when Setup_Kind =>
                      Server_Communication.Transmit_String_Line ("Startup: Heaters.Init");
@@ -257,13 +268,6 @@ package body Server_Communication is
                      then
                         In_Conditional_Skip_Mode := True;
                      end if;
-                  when TMC_Write_Kind =>
-                     Steppers.UART_IO.Write (RX_Message.Content.TMC_Write_Data);
-                  when TMC_Read_Kind =>
-                     Set_TX_Message_Kind (TMC_Read_Reply_Kind);
-                     Steppers.UART_IO.Start_Read (RX_Message.Content.TMC_Read_Data);
-                     Steppers.UART_IO.Get_Read_Result
-                       (TX_Message.Content.TMC_Receive_Failed, TX_Message.Content.TMC_Data);
                   when Status_Kind =>
                      null;
                   when Check_If_Idle_Kind =>
@@ -344,6 +348,16 @@ package body Server_Communication is
             for Fan in Fan_Name loop
                TX_Message.Content.Tachs (Fan) := Fans.Get_Tach_Counter (Fan);
             end loop;
+
+            if Steppers.UART_IO.Read_Result_Ready then
+               Steppers.UART_IO.Get_Read_Result (TX_Message.Content.TMC_Data);
+               if TX_Message.Content.TMC_Data (1) = 0 then
+                  TX_Message.Content.TMC_Data := (others => 255);
+                  --  Put some junk where the sync byte should be to indicate that we received a junk reply.
+               end if;
+            else
+               TX_Message.Content.TMC_Data := (others => 0);
+            end if;
          end if;
 
          Start_Transfer
