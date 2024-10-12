@@ -11,6 +11,8 @@ package body Communications is
 
       Last_Received_Index : Message_Index := Message_Index'First;
 
+      In_Safe_Stop_State : Boolean := True;
+
       package MCU_Log_Buffer_Strings is new Ada.Strings.Bounded.Generic_Bounded_Length (Max => 5_000);
 
       MCU_Log_Buffer : MCU_Log_Buffer_Strings.Bounded_String;
@@ -190,6 +192,10 @@ package body Communications is
          Reply_Checksum_Good : Boolean;
       begin
          pragma Assert (Message_Bytes'Size = Message'Size);
+
+         if Message.Content.Kind in Regular_Step_Delta_List_Kind | Looping_Step_Delta_List_Kind then
+            In_Safe_Stop_State := Message.Content.Safe_Stop_After = True;
+         end if;
 
          Prepare_Message (Message);
 
@@ -385,13 +391,12 @@ package body Communications is
                   Send_And_Handle_Reply (Message_To_Send, Received_Message);
                   Reply := Received_Message.Content;
                end Send_Message_And_Wait_For_Reply;
-            or
-               delay 0.2;
-               --  Send a status message after a timeout, but only if setup is done.
-               if Last_Received_Index > Message_Index'First then
-                  Message_To_Send.Content := (Kind => Status_Kind, Index => <>);
-                  Send_And_Handle_Reply (Message_To_Send, Received_Message);
-               end if;
+            or when Last_Received_Index > Message_Index'First and In_Safe_Stop_State =>
+               delay 0.05;
+               Message_To_Send.Content :=
+                 (Kind => Status_Kind, Index => <>, TMC_Write_Data => (others => 0), TMC_Read_Data => (others => 0));
+               Send_And_Handle_Reply (Message_To_Send, Received_Message);
+               --  Send a status message after a timeout, but only if setup is done and we are in a safe stop state.
             end select;
          end;
       end loop;
