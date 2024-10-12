@@ -8,7 +8,7 @@ bash -c 'cd firmware_patcher && alr build'
 ** Regular Build
 #+begin_src shell
 alr clean # When switching between debug and release
-alr build && alr exec -- arm-none-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin && ./firmware_patcher/bin/firmware_patcher bin/prunt_board_2_firmware.bin bin/prunt_board_2_firmware_with_crc.bin
+ADL_BUILD=Debug alr build && alr exec -- arm-none-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin && ./firmware_patcher/bin/firmware_patcher bin/prunt_board_2_firmware.bin bin/prunt_board_2_firmware_with_crc.bin
 #+end_src
 
 ** Production Build
