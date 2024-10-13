@@ -120,7 +120,13 @@ procedure Prunt_Board_2_Server is
      (Heater_Thermistors : My_Controller_Generic_Types.Heater_Thermistor_Map;
       Thermistors        : Thermistor_Parameters_Array_Type)
    is
-      Message : Message_From_Server_Content := (Kind => Setup_Kind, others => <>);
+      Message : Message_From_Server_Content :=
+        (Kind               => Setup_Kind,
+         Index              => <>,
+         TMC_Write_Data     => (others => 0),
+         TMC_Read_Data      => (others => 0),
+         Heater_Thermistors => <>,
+         Thermistor_Curves  => <>);
    begin
       for H in Heater_Name loop
          Message.Heater_Thermistors (H) := Heater_Thermistors (H);
