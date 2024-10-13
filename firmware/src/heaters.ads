@@ -45,7 +45,12 @@ private
       procedure Set (Params : Heater_Parameters);
       function Get return Heater_Parameters;
    private
-      Data : Heater_Parameters := (Kind => Disabled_Kind, others => <>);
+      Data : Heater_Parameters :=
+        (Kind                       => Disabled_Kind,
+         Check_Max_Cumulative_Error => 0.0,
+         Check_Gain_Time            => 0.0,
+         Check_Minimum_Gain         => 0.0,
+         Check_Hysteresis           => 0.0);
    end Heater_Params_Holder;
 
    Heater_Heater_Params : array (Heater_Name) of Heater_Params_Holder;
@@ -68,13 +73,13 @@ private
    Heater_Controller_2 : Heater_Controller (Heater_2);
 
    type Safety_Checker_Context is record
-      Updated_Since_Last_Reset : Boolean            := False;
-      Approaching_Setpoint     : Boolean            := False;
-      Starting_Approach        : Boolean            := False;
-      Cumulative_Error         : Temperature        := 0.0 * celcius;
-      Last_Setpoint            : Temperature        := 0.0 * celcius;
-      Goal_Temp                : Temperature        := 0.0 * celcius;
-      Goal_Time                : Ada.Real_Time.Time := Clock;
+      Updated_Since_Last_Reset : Boolean;
+      Approaching_Setpoint     : Boolean;
+      Starting_Approach        : Boolean;
+      Cumulative_Error         : Temperature;
+      Last_Setpoint            : Temperature;
+      Goal_Temp                : Temperature;
+      Goal_Time                : Ada.Real_Time.Time;
    end record;
 
    type Safety_Checker_Contexts_Array is array (Heater_Name) of Safety_Checker_Context;
@@ -82,7 +87,15 @@ private
    protected Safety_Checker is
       procedure Report_Updated (Updated_Heater : Heater_Name; Current_Temp : Temperature);
    private
-      Contexts : Safety_Checker_Contexts_Array := (others => <>);
+      Contexts : Safety_Checker_Contexts_Array :=
+        (others =>
+           (Updated_Since_Last_Reset => False,
+            Approaching_Setpoint     => False,
+            Starting_Approach        => False,
+            Cumulative_Error         => 0.0 * celcius,
+            Last_Setpoint            => 0.0 * celcius,
+            Goal_Temp                => 0.0 * celcius,
+            Goal_Time                => Clock));
    end Safety_Checker;
 
    procedure Set_PWM (Heater : Heater_Name; Scale : PWM_Scale) with
