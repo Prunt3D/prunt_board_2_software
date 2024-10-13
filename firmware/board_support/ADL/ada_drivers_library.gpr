@@ -35,13 +35,13 @@ library project Ada_Drivers_Library is
             for Default_Switches ("Ada") use
               ("-O3",     --  Optimization level 3
                -- "-gnatp",  --  Supress checks
-               "-Wstack-usage=128", --  Warn about large stack frames
+               "-Wstack-usage=200", --  Warn about large stack frames
                "-gnata", --  Enable assertions
                "-gnatn"); --  Enable inlining
          when "Debug" =>
             for Default_Switches ("Ada") use
               ("-Og",    --  Optimization level g (level 0 causes some large stack frames to be generated)
-               "-Wstack-usage=128", --  Warn about large stack frames
+               "-Wstack-usage=200", --  Warn about large stack frames
                "-gnata") --  Enable assertions
               & Callgraph_Switch;
       end case;
@@ -51,13 +51,14 @@ library project Ada_Drivers_Library is
         Build_Checks_Switches &
         ("-g",       --  Debug info
          "-gnatwa",  --  All warnings
-         "-gnatw_A", --  Turn off warnings for anonymous allocators
+         -- "-gnatw_A", --  Turn off warnings for anonymous allocators
          "-gnatQ",   --  Don't quit. Generate ALI and tree files even if illegalities
-         "-gnatw.X", --  Disable warnings for No_Exception_Propagation
+         -- "-gnatw.X", --  Disable warnings for No_Exception_Propagation
          "-ffunction-sections", --  Create a linker section for each function
          "-fdata-sections",  --  Create a linker section for each data
          "-gnat2022",  --  Ada 2022
-         "-gnatW8");  --  UTF8 strings
+         "-gnatW8",  --  UTF8 strings
+         "-gnaty-s"); --  Disable warnings for missing procedure/function specs
    end Compiler;
 
    for Languages use ("Ada");

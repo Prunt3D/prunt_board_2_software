@@ -10,12 +10,11 @@ with STM32.Timers;         use STM32.Timers;
 with STM32.LPTimers;       use STM32.LPTimers;
 with STM32.ADC;            use STM32.ADC;
 with STM32.COMP;           use STM32.COMP;
+with Ada.Interrupts.Names; use Ada.Interrupts.Names;
+with Ada.Interrupts;       use Ada.Interrupts;
 with STM32_SVD;
 with STM32_SVD.USART;
 with STM32_SVD.ADC;
-with STM32_SVD.DMA;
-with Ada.Interrupts.Names; use Ada.Interrupts.Names;
-with Ada.Interrupts;       use Ada.Interrupts;
 
 package Hardware_Configuration is
 

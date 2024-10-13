@@ -32,4 +32,8 @@ private
 
    type Flash_Memory is new STM32_SVD.Flash.FLASH_Peripheral;
 
+
+   procedure Disable_Cache (This : in out Flash_Memory);
+   procedure Enable_Cache (This : in out Flash_Memory);
+
 end STM32.Flash;

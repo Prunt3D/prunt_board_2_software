@@ -4,9 +4,6 @@ with STM32.Device; use STM32.Device;
 with STM32.Timers; use STM32.Timers;
 with STM32.IWDG;
 with Server_Communication;
-with System.Machine_Reset;
-with Ada.Exceptions;
-with GNAT.Source_Info;
 with Ada.Numerics;
 with Thermistors;
 

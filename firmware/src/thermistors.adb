@@ -4,11 +4,6 @@ with STM32.ADC;     use STM32.ADC;
 with STM32.DMA;     use STM32.DMA;
 with HAL;           use HAL;
 with Heaters;
-with Server_Communication;
-with System.Machine_Reset;
-with Ada.Exceptions;
-with GNAT.Source_Info;
-with Ada.Real_Time; use Ada.Real_Time;
 with Last_Chance_Handler;
 
 package body Thermistors is

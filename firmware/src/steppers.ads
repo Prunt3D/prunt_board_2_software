@@ -14,7 +14,7 @@ package Steppers is
       function Read_Result_Ready return Boolean;
 
       procedure Get_Read_Result (Output : out TMC2240_UART_Data_Byte_Array);
-      -- Sets Output to (others => 255) in case of a timeout. This can just be interpreted as a corrupted message.
+      --  Sets Output to (others => 255) in case of a timeout. This can just be interpreted as a corrupted message.
 
       procedure Write (Input : TMC2240_UART_Data_Byte_Array);
    private
