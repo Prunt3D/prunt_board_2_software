@@ -17,6 +17,7 @@ with Input_Switches;
 with Thermistors;
 with Heaters;
 with Fans;
+with MCU_Temperature;
 with System.Machine_Code;
 
 package body Server_Communication is
@@ -341,6 +342,8 @@ package body Server_Communication is
                   end if;
                end;
             end loop;
+
+            TX_Message.Content.MCU_Temperature := Fixed_Point_Celcius (MCU_Temperature.Last_Temperature);
 
             for Switch in Input_Switch_Name loop
                TX_Message.Content.Switches (Switch) := Input_Switches.Get_State (Switch);

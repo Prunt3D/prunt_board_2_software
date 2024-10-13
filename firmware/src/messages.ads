@@ -375,6 +375,7 @@ package Messages is
       --  Always keep the above fields at the same positions so the server can reliably detect an unexpected firmware
       --  version and handle firmware updates.
       Temperatures          at 16 range 0 ..  95;
+      MCU_Temperature       at 28 range 0 ..  23;
       Heaters               at 31 range 0 ..  31;
       Switches              at 35 range 0 ..  79;
       Tachs                 at 45 range 0 ..  63;
