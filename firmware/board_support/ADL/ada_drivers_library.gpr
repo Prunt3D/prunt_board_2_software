@@ -42,7 +42,8 @@ library project Ada_Drivers_Library is
             for Default_Switches ("Ada") use
               ("-Og",    --  Optimization level g (level 0 causes some large stack frames to be generated)
                "-Wstack-usage=200", --  Warn about large stack frames
-               "-gnata") --  Enable assertions
+               "-gnata", --  Enable assertions
+               "-gnatVa") --  All validity checks
               & Callgraph_Switch;
       end case;
 
