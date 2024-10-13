@@ -123,10 +123,11 @@ package body Server_Communication is
       --  TODO: For some reason the above line gives a Range_Check error without the Uint16.
 
       Set_TX_Message_Kind (Hello_Kind);
-      TX_Message.Content.Index       := Last_Message_Index;
-      TX_Message.Content.Version     := 1;
-      TX_Message.Content.Self_Length := Message_From_Client'Value_Size / 4;
-      TX_Message.Content.ID          :=
+      TX_Message.Content.Index                 := Last_Message_Index;
+      TX_Message.Content.Version               := 1;
+      TX_Message.Content.Client_Message_Length := Message_From_Client'Value_Size / 4;
+      TX_Message.Content.Server_Message_Length := Message_From_Server'Value_Size / 8;
+      TX_Message.Content.ID                    :=
         DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE;
       Set_TX_Message_CRC;
 
@@ -301,8 +302,8 @@ package body Server_Communication is
                      end if;
                      declare
                         Address : constant Natural :=
-                          16#0804_0000# + 10 * 1_024 * Natural (RX_Message.Content.Firmware_Offset);
-                        Data    : STM32.Flash.Flash_Data (1 .. 10 * 1_024 / 8) with
+                          16#0804_0000# + 1_024 * Natural (RX_Message.Content.Firmware_Offset);
+                        Data    : STM32.Flash.Flash_Data (1 .. 1_024 / 8) with
                           Address => RX_Message.Content.Firmware_Data'Address;
                      begin
                         STM32.Flash.Write (Flash, System'To_Address (Address), Data);
