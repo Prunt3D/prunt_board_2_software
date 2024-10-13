@@ -33,17 +33,17 @@ private
 
    TMC_Query         : TMC2240_UART_Query_Byte_Array with
      Volatile;
-   TMC_Query_Waiting : Boolean with
+   TMC_Query_Waiting : Boolean := False with
      Volatile, Atomic;
 
    TMC_Write         : TMC2240_UART_Data_Byte_Array with
      Volatile;
-   TMC_Write_Waiting : Boolean with
+   TMC_Write_Waiting : Boolean := False with
      Volatile, Atomic;
 
    TMC_Reply         : TMC2240_UART_Data_Byte_Array with
      Volatile;
-   TMC_Reply_Waiting : Boolean with
+   TMC_Reply_Waiting : Boolean := False with
      Volatile, Atomic;
 
    --  We avoid using a protected object for the above as the Runner task accesses them and it is crucial that the
