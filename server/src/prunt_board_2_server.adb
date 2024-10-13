@@ -159,7 +159,12 @@ procedure Prunt_Board_2_Server is
             TMC_Write_Data => (others => 0),
             TMC_Read_Data  => (others => 0),
             Heater         => H,
-            Heater_Params  => (Kind => Disabled_Kind, others => <>));
+            Heater_Params  =>
+              (Kind                       => Disabled_Kind,
+               Check_Max_Cumulative_Error => 0.0,
+               Check_Gain_Time            => 0.0,
+               Check_Minimum_Gain         => 0.0,
+               Check_Hysteresis           => 0.0));
          My_Communications.Runner.Send_Message (Message);
       end loop;
 
