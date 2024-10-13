@@ -12,7 +12,8 @@ project Prunt_Board_2_Server is
         Prunt_Board_2_Server_Config.Ada_Compiler_Switches &
         ("-gnatyM119",
          "-gnat2022",
-         "-gnaty-B");
+         "-gnaty-B",
+         "-gnatW8");
    end Compiler;
 
    package Builder is
