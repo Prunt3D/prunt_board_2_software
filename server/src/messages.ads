@@ -347,6 +347,7 @@ package Messages is
             --  Number of bytes sent in complete message from the server.
          when others =>
             Temperatures    : Reported_Temperatures;
+            MCU_Temperature : Fixed_Point_Celcius;
             Heaters         : Reported_Heater_PWMs;
             Switches        : Reported_Switch_States;
             Tachs           : Reported_Tach_Counters;
@@ -374,6 +375,7 @@ package Messages is
       --  Always keep the above fields at the same positions so the server can reliably detect an unexpected firmware
       --  version and handle firmware updates.
       Temperatures          at 16 range 0 ..  95;
+      MCU_Temperature       at 28 range 0 ..  23;
       Heaters               at 31 range 0 ..  31;
       Switches              at 35 range 0 ..  79;
       Tachs                 at 45 range 0 ..  63;
