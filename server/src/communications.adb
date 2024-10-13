@@ -71,20 +71,24 @@ package body Communications is
          Append (MCU_Log_Buffer, C);
       end Log_MCU_Character;
 
-      procedure Prepare_Message (Message : in out Message_From_Server) is
-         type Byte_Array is array (1 .. Message_From_Server_Content'Value_Size / 8) of Character with
-           Pack;
-
+      procedure Prepare_Message
+        (Message       : in out Message_From_Server;
+         Bytes_To_Send :        Stream_Element_Offset := Message_From_Server'Value_Size / 8)
+      is
          Checksum      : GNAT.CRC32.CRC32;
-         Message_Bytes : Byte_Array with
+         Message_Bytes : Stream_Element_Array (1 .. Message_From_Server_Content'Value_Size / 8) with
            Address => Message.Content'Address;
       begin
          Message.Content.Index := Last_Received_Index + 1;
 
          GNAT.CRC32.Initialize (Checksum);
 
-         for C of Message_Bytes loop
-            GNAT.CRC32.Update (Checksum, C);
+         for I in 1 .. Bytes_To_Send - 4 loop
+            if I in Message_Bytes'Range then
+               GNAT.CRC32.Update (Checksum, Message_Bytes (I));
+            else
+               GNAT.CRC32.Update (Checksum, 0);
+            end if;
          end loop;
 
          Message.Checksum := CRC32 (GNAT.CRC32.Get_Value (Checksum));
@@ -131,8 +135,8 @@ package body Communications is
                      if Message.Content.Kind'Valid
                        and then
                        (Message.Content.Kind = Hello_Kind or Message.Content.Kind = Firmware_Update_Reply_Kind)
-                       and then Message.Content.Self_Length /= 0
-                       and then Message.Content.Self_Length = Client_Message_Self_Length (I - Bytes_Consumed)
+                       and then Message.Content.Client_Message_Length /= 0
+                       and then Message.Content.Client_Message_Length = Message_Length (I - Bytes_Consumed)
                      then
                         --  This handles a future firmware version that has a smaller client message size.
                         Flush_MCU_Log_Buffer;
@@ -172,10 +176,10 @@ package body Communications is
          begin
             if Message.Content.Kind'Valid
               and then (Message.Content.Kind = Hello_Kind or Message.Content.Kind = Firmware_Update_Reply_Kind)
-              and then Message.Content.Self_Length /= 0
+              and then Message.Content.Client_Message_Length /= 0
             then
                Extra_Nibbles_To_Checksum :=
-                 Message_From_Client'Value_Size / 4 - Stream_Element_Offset (Message.Content.Self_Length);
+                 Message_From_Client'Value_Size / 4 - Stream_Element_Offset (Message.Content.Client_Message_Length);
             end if;
 
             loop
@@ -219,7 +223,9 @@ package body Communications is
       end Get_Reply;
 
       procedure Send_And_Handle_Reply
-        (Message : aliased in out Message_From_Server; Reply : aliased out Message_From_Client)
+        (Message       : aliased in out Message_From_Server;
+         Reply         : aliased    out Message_From_Client;
+         Bytes_To_Send :                Stream_Element_Offset := Message_From_Server'Value_Size / 8)
       is
          Message_Bytes : Stream_Element_Array (1 .. Message_From_Server'Value_Size / 8) with
            Address => Message'Address;
@@ -228,10 +234,14 @@ package body Communications is
       begin
          pragma Assert (Message_Bytes'Size = Message'Size);
 
-         if Message.Content.TMC_Read_Data /= TMC2240_UART_Query_Byte_Array'(others => 0) or
-           Message.Content.TMC_Write_Data /= TMC2240_UART_Data_Byte_Array'(others => 0)
+         if Message.Content.Kind not in
+             Firmware_Update_Start_Kind | Firmware_Update_Data_Kind | Firmware_Update_Done_Kind
          then
-            raise Constraint_Error with "TMC data can not be manually placed in a server message.";
+            if Message.Content.TMC_Read_Data /= TMC2240_UART_Query_Byte_Array'(others => 0) or
+              Message.Content.TMC_Write_Data /= TMC2240_UART_Data_Byte_Array'(others => 0)
+            then
+               raise Constraint_Error with "TMC data can not be manually placed in a server message.";
+            end if;
          end if;
 
          if TMC_Query_Waiting then
@@ -246,9 +256,13 @@ package body Communications is
             In_Safe_Stop_State := Message.Content.Safe_Stop_After = True;
          end if;
 
-         Prepare_Message (Message);
+         Prepare_Message (Message, Bytes_To_Send);
 
-         GNAT.Serial_Communications.Write (Port, Message_Bytes);
+         GNAT.Serial_Communications.Write
+           (Port, Message_Bytes (1 .. Stream_Element_Offset'Min (Message_From_Server'Value_Size / 8, Bytes_To_Send)));
+         for I in 1 .. Bytes_To_Send - Message_From_Server'Value_Size / 8 loop
+            GNAT.Serial_Communications.Write (Port, (1 => 0));
+         end loop;
 
          loop
             Get_Reply (Reply, Reply_Checksum_Good);
@@ -375,6 +389,8 @@ package body Communications is
                      Prompt_For_Update;
 
                      declare
+                        Bytes_To_Send   : constant Stream_Element_Offset                :=
+                          Stream_Element_Offset (Received_Message.Content.Server_Message_Length);
                         Message_To_Send : aliased Message_From_Server;
                         Firmware        : constant access constant Stream_Element_Array :=
                           Embedded_Resources.Get_Content ("prunt_board_2_firmware_with_crc.bin");
@@ -382,13 +398,17 @@ package body Communications is
                           Firmware_Data_Offset
                             ((Firmware.all'Length + Firmware_Data_Array'Length - 1) / Firmware_Data_Array'Length);
                      begin
+                        if Bytes_To_Send < 1_048 then
+                           raise Constraint_Error with "Server message size too small to send firmware updates.";
+                        end if;
+
                         Log ("Starting firmware update.");
                         Message_To_Send.Content :=
                           (Kind  => Firmware_Update_Start_Kind,
                            Index => 0,
                            ID    =>
                              DO_NOT_COPY_THIS_CLIENT_ID_AS_IT_IS_MEANT_TO_IDENTIFY_THIS_PARTICULAR_BOARD_MODEL_AND_FIRMWARE);
-                        Send_And_Handle_Reply (Message_To_Send, Received_Message);
+                        Send_And_Handle_Reply (Message_To_Send, Received_Message, Bytes_To_Send);
 
                         for I in 0 .. Final_Offset loop
                            Log
@@ -410,12 +430,12 @@ package body Communications is
                                  end if;
                               end;
                            end loop;
-                           Send_And_Handle_Reply (Message_To_Send, Received_Message);
+                           Send_And_Handle_Reply (Message_To_Send, Received_Message, Bytes_To_Send);
                         end loop;
 
                         Log ("Ending firmware update.");
                         Message_To_Send.Content := (Kind => Firmware_Update_Done_Kind, Index => 0);
-                        Send_And_Handle_Reply (Message_To_Send, Received_Message);
+                        Send_And_Handle_Reply (Message_To_Send, Received_Message, Bytes_To_Send);
                      end;
                   end if;
                end;
