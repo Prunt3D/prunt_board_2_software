@@ -56,12 +56,15 @@ procedure Prunt_Board_2_Server is
       return To_UTF_8 (if Arg2 /= Null_UXString then Arg2 else Default);
    end Argument_Value;
 
+   type Board_Temperature_Probe_Name is (Main_MCU);
+
    package My_Controller_Generic_Types is new Prunt.Controller_Generic_Types
-     (Stepper_Name      => Stepper_Name,
-      Heater_Name       => Heater_Name,
-      Thermistor_Name   => Thermistor_Name,
-      Fan_Name          => Fan_Name,
-      Input_Switch_Name => Input_Switch_Name);
+     (Stepper_Name                 => Stepper_Name,
+      Heater_Name                  => Heater_Name,
+      Thermistor_Name              => Thermistor_Name,
+      Board_Temperature_Probe_Name => Board_Temperature_Probe_Name,
+      Fan_Name                     => Fan_Name,
+      Input_Switch_Name            => Input_Switch_Name);
 
    use My_Controller_Generic_Types;
 
@@ -89,6 +92,8 @@ procedure Prunt_Board_2_Server is
 
    procedure Report_Temperature (Thermistor : Thermistor_Name; Temp : Fixed_Point_Celcius);
 
+   procedure Report_MCU_Temperature (Temp : Fixed_Point_Celcius);
+
    procedure Report_Heater_Power (Heater : Heater_Name; Power : Fixed_Point_PWM_Scale);
 
    procedure Report_Input_Switch_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State);
@@ -101,6 +106,7 @@ procedure Prunt_Board_2_Server is
    package My_Communications is new Communications
      (Report_Error              => Report_Error,
       Report_Temperature        => Report_Temperature,
+      Report_MCU_Temperature    => Report_MCU_Temperature,
       Report_Heater_Power       => Report_Heater_Power,
       Report_Input_Switch_State => Report_Input_Switch_State,
       Prompt_For_Update         => Prompt_For_Update,
@@ -508,6 +514,11 @@ procedure Prunt_Board_2_Server is
    begin
       My_Controller.Report_Temperature (Thermistor, Temperature (Temp));
    end Report_Temperature;
+
+   procedure Report_MCU_Temperature (Temp : Fixed_Point_Celcius) is
+   begin
+      My_Controller.Report_Temperature (Main_MCU, Temperature (Temp));
+   end Report_MCU_Temperature;
 
    procedure Report_Heater_Power (Heater : Messages.Heater_Name; Power : Fixed_Point_PWM_Scale) is
    begin

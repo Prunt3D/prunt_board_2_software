@@ -6,6 +6,7 @@ with System.Multiprocessors;
 generic
    with procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence);
    with procedure Report_Temperature (Thermistor : Thermistor_Name; Temp : Fixed_Point_Celcius);
+   with procedure Report_MCU_Temperature (Temp : Fixed_Point_Celcius);
    with procedure Report_Heater_Power (Heater : Heater_Name; Power : Fixed_Point_PWM_Scale);
    with procedure Report_Input_Switch_State (Switch : Input_Switch_Name; State : Input_Switch_State);
    with procedure Prompt_For_Update;

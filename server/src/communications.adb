@@ -296,6 +296,8 @@ package body Communications is
                Report_Temperature (T, Reply.Content.Temperatures (T));
             end loop;
 
+            Report_MCU_Temperature (Reply.Content.MCU_Temperature);
+
             for H in Heater_Name loop
                Report_Heater_Power (H, Reply.Content.Heaters (H));
             end loop;
