@@ -80,14 +80,14 @@ package Hardware_Configuration is
    --  Heaters
 
    Heater_Timers           : constant array (Heater_Name) of access Timer                  :=
-     (Heater_1 => Timer_4'Access, Heater_2 => Timer_8'Access);
+     (Heater_1 => Timer_8'Access, Heater_2 => Timer_4'Access);
    Heater_Timer_Channels   : constant array (Heater_Name) of Timer_Channel                 :=
-     (Heater_1 => Channel_2, Heater_2 => Channel_1);
+     (Heater_1 => Channel_1, Heater_2 => Channel_2);
    Heater_Timer_Polarities : constant array (Heater_Name) of Timer_Output_Compare_Polarity :=
      (Heater_1 => High, Heater_2 => High);
-   Heater_GPIO_Points      : constant array (Heater_Name) of GPIO_Point := (Heater_1 => PB7, Heater_2 => PA15);
+   Heater_GPIO_Points      : constant array (Heater_Name) of GPIO_Point := (Heater_1 => PA15, Heater_2 => PB7);
    Heater_GPIO_AFs         : constant array (Heater_Name) of GPIO_Alternate_Function       :=
-     (Heater_1 => GPIO_AF_TIM4_2, Heater_2 => GPIO_AF_TIM8_2);
+     (Heater_1 => GPIO_AF_TIM8_2, Heater_2 => GPIO_AF_TIM4_2);
    --  Heaters package also uses IWDG.
 
    --  High_Power_Switch
