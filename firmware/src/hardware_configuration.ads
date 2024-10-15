@@ -120,17 +120,17 @@ package Hardware_Configuration is
    --  Fans
 
    Fan_Timers              : constant array (Fan_Name) of access Timer                  :=
-     (Fan_1 => Timer_2'Access, Fan_2 => Timer_20'Access, Fan_3 => Timer_15'Access, Fan_4 => Timer_17'Access);
+     (Fan_1 => Timer_20'Access, Fan_2 => Timer_17'Access, Fan_3 => Timer_2'Access, Fan_4 => Timer_15'Access);
    Fan_Timer_Channels      : constant array (Fan_Name) of Timer_Channel                 :=
-     (Fan_1 => Channel_3, Fan_2 => Channel_1, Fan_3 => Channel_1, Fan_4 => Channel_1);
+     (Fan_1 => Channel_2, Fan_2 => Channel_1, Fan_3 => Channel_3, Fan_4 => Channel_1);
    Fan_Timer_Complementary : constant array (Fan_Name) of Boolean                       :=
-     (Fan_1 => False, Fan_2 => False, Fan_3 => True, Fan_4 => False);
+     (Fan_1 => False, Fan_2 => False, Fan_3 => False, Fan_4 => True);
    Fan_Timer_Polarities    : constant array (Fan_Name) of Timer_Output_Compare_Polarity :=
-     (Fan_1 => Low, Fan_2 => Low, Fan_3 => High, Fan_4 => Low);
+     (Fan_1 => Low, Fan_2 => Low, Fan_3 => Low, Fan_4 => High);
    Fan_GPIO_Points         : constant array (Fan_Name) of GPIO_Point                    :=
-     (Fan_1 => PB10, Fan_2 => PB2, Fan_3 => PA1, Fan_4 => PB9);
+     (Fan_1 => PB2, Fan_2 => PB9, Fan_3 => PB10, Fan_4 => PA1);
    Fan_GPIO_AFs            : constant array (Fan_Name) of GPIO_Alternate_Function       :=
-     (Fan_1 => GPIO_AF_TIM2_1, Fan_2 => GPIO_AF_TIM20_3, Fan_3 => GPIO_AF_TIM15_9, Fan_4 => GPIO_AF_TIM17_1);
+     (Fan_1 => GPIO_AF_TIM20_3, Fan_2 => GPIO_AF_TIM17_1, Fan_3 => GPIO_AF_TIM2_1, Fan_4 => GPIO_AF_TIM15_9);
 
    type Tach_Config_Kind is (Timer_Kind, LPTimer_Kind);
 
@@ -149,13 +149,13 @@ package Hardware_Configuration is
 
    Tach_Configs : constant array (Fan_Name) of Tach_Config :=
      (Fan_1 =>
-        (Kind => Timer_Kind, Point => PA7, Comp => Comp_2'Access, Tim => Timer_1'Access, Trigger => Comp_2_Output),
-      Fan_2 =>
-        (Kind => LPTimer_Kind, Point => PB1, Comp => Comp_1'Access, LPTim => LPTimer_1'Access, Clock => Option_1),
-      Fan_3 =>
         (Kind => Timer_Kind, Point => PB0, Comp => Comp_4'Access, Tim => Timer_3'Access, Trigger => Comp_4_Output),
+      Fan_2 =>
+        (Kind => Timer_Kind, Point => PA0, Comp => Comp_3'Access, Tim => Timer_5'Access, Trigger => Comp_3_Output),
+      Fan_3 =>
+        (Kind => LPTimer_Kind, Point => PB1, Comp => Comp_1'Access, LPTim => LPTimer_1'Access, Clock => Option_1),
       Fan_4 =>
-        (Kind => Timer_Kind, Point => PA0, Comp => Comp_3'Access, Tim => Timer_5'Access, Trigger => Comp_3_Output));
+        (Kind => Timer_Kind, Point => PA7, Comp => Comp_2'Access, Tim => Timer_1'Access, Trigger => Comp_2_Output));
 
    --  MCU_Temperature uses ADC_5.
 
