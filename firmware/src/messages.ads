@@ -4,10 +4,20 @@ package Messages is
 
    type Heater_Name is (Heater_1, Heater_2) with
      Size => 8;
+
+   for Heater_Name use (Heater_1 => 1, Heater_2 => 2);
+
    type Fan_Name is (Fan_1, Fan_2, Fan_3, Fan_4) with
      Size => 8;
+
+   for Fan_Name use (Fan_1 => 1, Fan_2 => 2, Fan_3 => 3, Fan_4 => 4);
+
    type Stepper_Name is (Stepper_1, Stepper_2, Stepper_3, Stepper_4, Stepper_5, Stepper_6) with
      Size => 8;
+
+   for Stepper_Name use
+     (Stepper_1 => 1, Stepper_2 => 2, Stepper_3 => 3, Stepper_4 => 4, Stepper_5 => 5, Stepper_6 => 6);
+
    type Input_Switch_Name is
      (Endstop_1,
       Endstop_2,
@@ -20,8 +30,23 @@ package Messages is
       Stepper_5_Diag_0,
       Stepper_6_Diag_0) with
      Size => 8;
+
+   for Input_Switch_Name use
+     (Endstop_1        => 1,
+      Endstop_2        => 2,
+      Endstop_3        => 3,
+      Endstop_4        => 4,
+      Stepper_1_Diag_0 => 11,
+      Stepper_2_Diag_0 => 12,
+      Stepper_3_Diag_0 => 13,
+      Stepper_4_Diag_0 => 14,
+      Stepper_5_Diag_0 => 15,
+      Stepper_6_Diag_0 => 16);
+
    type Thermistor_Name is (Thermistor_1, Thermistor_2, Thermistor_3, Thermistor_4) with
      Size => 8;
+
+   for Thermistor_Name use (Thermistor_1 => 1, Thermistor_2 => 2, Thermistor_3 => 3, Thermistor_4 => 4);
 
    type Byte_Boolean is new Boolean with
      Size => 8;
