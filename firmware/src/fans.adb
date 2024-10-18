@@ -92,6 +92,18 @@ package body Fans is
       Init_Checker.Report_Init_Done;
    end Init;
 
+   procedure Reconfigure (Fan : Fan_Name; PWM_Frequency : Fixed_Point_Fan_PWM_Frequency) is
+      Prescaler : UInt32;
+      Period    : UInt32;
+   begin
+      Compute_Prescaler_And_Period
+        (This                => Fan_Timers (Fan),
+         Requested_Frequency => UInt32 (PWM_Frequency),
+         Prescaler           => Prescaler,
+         Period              => Period);
+      Configure (This => Fan_Timers (Fan).all, Prescaler => UInt16 (Prescaler), Period => Period);
+   end Reconfigure;
+
    procedure Set_PWM (Fan : Fan_Name; Scale : Fixed_Point_PWM_Scale) is
    begin
       Init_Checker.Raise_If_Init_Not_Done;

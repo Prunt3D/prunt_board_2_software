@@ -125,7 +125,7 @@ package body Server_Communication is
 
       Set_TX_Message_Kind (Hello_Kind);
       TX_Message.Content.Index                 := Last_Message_Index;
-      TX_Message.Content.Version               := 1;
+      TX_Message.Content.Version               := 2;
       TX_Message.Content.Client_Message_Length := Message_From_Client'Value_Size / 4;
       TX_Message.Content.Server_Message_Length := Message_From_Server'Value_Size / 8;
       TX_Message.Content.ID                    :=
@@ -288,6 +288,8 @@ package body Server_Communication is
                      High_Power_Switch.Enable;
                   when Disable_High_Power_Switch_Kind =>
                      High_Power_Switch.Disable;
+                  when Fan_Reconfigure_Kind =>
+                     Fans.Reconfigure (RX_Message.Content.Fan, RX_Message.Content.Fan_PWM_Frequency);
                   when Firmware_Update_Start_Kind =>
                      Set_TX_Message_Kind (Firmware_Update_Reply_Kind);
                      if not STM32.Flash.Is_Locked (Flash) then
