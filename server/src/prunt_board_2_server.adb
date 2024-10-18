@@ -239,6 +239,17 @@ procedure Prunt_Board_2_Server is
       My_Communications.Runner.Send_Message (Message);
    end Reconfigure_Heater;
 
+   procedure Reconfigure_Fan (Fan : Fan_Name; PWM_Freq : Fan_PWM_Frequency) is
+   begin
+      My_Communications.Runner.Send_Message
+        ((Kind              => Fan_Reconfigure_Kind,
+          Index             => <>,
+          TMC_Write_Data    => (others => 0),
+          TMC_Read_Data     => (others => 0),
+          Fan               => Fan,
+          Fan_PWM_Frequency => Fixed_Point_Fan_PWM_Frequency (PWM_Freq)));
+   end Reconfigure_Fan;
+
    procedure Enable_Stepper (Stepper : Stepper_Name) is
    begin
       My_Communications.Runner.Send_Message
@@ -497,6 +508,7 @@ procedure Prunt_Board_2_Server is
       Loop_Interpolation_Time    => 60_000.0 / 1_200_000_000.0 * s,
       Setup                      => Setup,
       Reconfigure_Heater         => Reconfigure_Heater,
+      Reconfigure_Fan            => Reconfigure_Fan,
       Autotune_Heater            => Autotune_Heater,
       Setup_For_Loop_Move        => Setup_For_Loop_Move,
       Setup_For_Conditional_Move => Setup_For_Conditional_Move,

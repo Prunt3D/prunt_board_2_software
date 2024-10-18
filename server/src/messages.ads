@@ -216,6 +216,9 @@ package Messages is
    type Reported_Tach_Counters is array (Fan_Name) of Tach_Counter with
      Size => 16 * 4, Component_Size => 16, Scalar_Storage_Order => System.Low_Order_First;
 
+   type Fixed_Point_Fan_PWM_Frequency is delta 1.0 range 1.0 .. 50_000.0 with
+     Size => 16, Small => 1.0;
+
    type Firmware_Data_Offset is mod 2**8;
 
    type Firmware_Byte is mod 2**8 with
@@ -238,6 +241,7 @@ package Messages is
       Disable_Stepper_Kind,
       Enable_High_Power_Switch_Kind,
       Disable_High_Power_Switch_Kind,
+      Fan_Reconfigure_Kind,
       Firmware_Update_Start_Kind,
       Firmware_Update_Data_Kind,
       Firmware_Update_Done_Kind) with
@@ -257,6 +261,7 @@ package Messages is
       Disable_Stepper_Kind               => 139,
       Enable_High_Power_Switch_Kind      => 140,
       Disable_High_Power_Switch_Kind     => 141,
+      Fan_Reconfigure_Kind               => 142,
       Firmware_Update_Start_Kind         => 252,
       Firmware_Update_Data_Kind          => 253,
       Firmware_Update_Done_Kind          => 254);
@@ -304,6 +309,9 @@ package Messages is
                   Stepper : Stepper_Name;
                when Enable_High_Power_Switch_Kind | Disable_High_Power_Switch_Kind =>
                   null;
+               when Fan_Reconfigure_Kind =>
+                  Fan               : Fan_Name;
+                  Fan_PWM_Frequency : Fixed_Point_Fan_PWM_Frequency;
                when Firmware_Update_Start_Kind | Firmware_Update_Data_Kind | Firmware_Update_Done_Kind =>
                   null;
             end case;
@@ -336,6 +344,8 @@ package Messages is
       Skip_If_Hit_State     at 33 range 0 ..      7;
       Heater_To_Check       at 32 range 0 ..      7;
       Stepper               at 32 range 0 ..      7;
+      Fan                   at 32 range 0 ..      7;
+      Fan_PWM_Frequency     at 34 range 0 ..     15;
    end record;
 
    type Message_From_Server is record
