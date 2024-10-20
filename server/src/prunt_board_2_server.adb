@@ -490,6 +490,11 @@ procedure Prunt_Board_2_Server is
       end loop;
    end Autotune_Heater;
 
+   procedure Shutdown is
+   begin
+      My_Communications.Runner.Shutdown;
+   end Shutdown;
+
    Stepper_UART_Address : constant array (Stepper_Name) of Prunt.TMC_Types.TMC2240.UART_Node_Address :=
      (Stepper_1 => 6, Stepper_2 => 4, Stepper_3 => 3, Stepper_4 => 2, Stepper_5 => 5, Stepper_6 => 1);
 
@@ -515,6 +520,7 @@ procedure Prunt_Board_2_Server is
       Enqueue_Command            => Enqueue_Command,
       Reset_Position             => Reset_Position,
       Wait_Until_Idle            => Wait_Until_Idle,
+      Shutdown                   => Shutdown,
       Config_Path                => "./prunt_board_2.toml");
 
    procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence) is

@@ -468,6 +468,9 @@ package body Communications is
                   Send_And_Handle_Reply (Message_To_Send, Received_Message);
                   Reply := Received_Message.Content;
                end Send_Message_And_Wait_For_Reply;
+            or
+               accept Shutdown;
+               exit;
             or when Last_Received_Index > Message_Index'First and In_Safe_Stop_State =>
                delay 0.05;
                Message_To_Send.Content :=

@@ -28,6 +28,7 @@ package Communications is
       entry Send_Message (Content : Message_From_Server_Content);
       entry Send_Message_And_Wait_For_Reply
         (Content : Message_From_Server_Content; Reply : out Message_From_Client_Content);
+      entry Shutdown;
    end Runner;
 
 private
