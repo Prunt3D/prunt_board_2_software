@@ -9,7 +9,7 @@ executables = ["prunt_board_2_server"]
 [[depends-on]]
 prunt = "*"
 [[pins]]
-prunt = { path = "../prunt" }
+prunt = { url = "https://github.com/Prunt3D/prunt.git" }
 
 [build-switches]
 release.optimization = ["-O3", "-gnatn", "-fdata-sections", "-ffunction-sections", "-flto=auto", "-fuse-linker-plugin", "-ffat-lto-objects"]
