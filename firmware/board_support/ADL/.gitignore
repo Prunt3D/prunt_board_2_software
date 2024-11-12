@@ -1,0 +1,16 @@
+*~
+*.o
+*.ali
+*.cswi
+*.pyc
+*-loc.xml
+gnatinspect.db
+b__*.ad[bs]
+.#*
+*.a
+obj/
+exec/
+obj_lib_Production
+obj_Production
+obj_lib_Debug
+obj_Debug

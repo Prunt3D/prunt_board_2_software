@@ -1,0 +1,12 @@
+*~
+*.o
+*.ali
+*.cswi
+*.pyc
+*-loc.xml
+gnatinspect.db
+b__*.ad[bs]
+.#*
+obj
+install
+*.a

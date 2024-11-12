@@ -1,0 +1,59 @@
+with "config/prunt_board_2_firmware_config.gpr";
+with "board_support/ADL/ada_drivers_library.gpr";
+
+project Prunt_Board_2_Firmware is
+
+   for Languages use ("Ada");
+   for Target use "arm-eabi";
+
+   for Source_Dirs use ("src/", "config/", "src/errors/");
+   for Object_Dir use "obj/" & Prunt_Board_2_Firmware_Config.Build_Profile;
+   for Create_Missing_Dirs use "True";
+   for Exec_Dir use "bin";
+   for Main use ("prunt_board_2_firmware.adb");
+
+   case Ada_Drivers_Library.RTS is
+      when "light-tasking" =>
+         for Runtime ("Ada") use Project'Project_Dir &
+           "board_support/ADL/runtimes/light-tasking-stm32g474";
+         for Source_Dirs use Project'Source_Dirs & ("src/errors/lch_light-tasking");
+      when "embedded" =>
+         for Runtime ("Ada") use Project'Project_Dir &
+           "board_support/ADL/runtimes/embedded-stm32g474";
+         for Source_Dirs use Project'Source_Dirs & ("src/errors/lch_embedded");
+   end case;
+
+   package Compiler renames Ada_Drivers_Library.Compiler;
+
+   package Builder is
+      for Global_Configuration_Pragmas use "gnat.adc";
+      for Executable_Suffix use ".elf";
+   end Builder;
+
+   package Binder is
+      for Switches ("Ada") use ("-Es", "-D1k");
+   end Binder;
+
+   package Linker is
+      for Default_Switches ("Ada") use
+         ("-Wl,--gc-sections",  --  Don't link unused code sections
+          -- "-Wl,--print-gc-sections",  --  List removed unused code sections
+          "-Wl,--print-memory-usage");
+   end Linker;
+
+   package Ide is
+      for Gnat use "arm-eabi-gnat";
+      for Gnatlist use "arm-eabi-gnatls";
+      for Debugger_Command use "arm-eabi-gdb";
+      for Program_Host use "localhost:4242";
+      for Communication_Protocol use "remote";
+      for Connection_Tool use "st-util";
+   end Ide;
+
+   package Pretty_Printer is
+      for Default_Switches ("ada") use
+        ("--max-line-length=119",
+         "--no-compact");
+   end Pretty_Printer;
+
+end Prunt_Board_2_Firmware;
