@@ -571,5 +571,6 @@ begin
 exception
    when E : others =>
       Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Information (E));
+      My_Controller.Report_External_Error (E);
       GNAT.OS_Lib.OS_Abort;
 end Prunt_Board_2_Server;
