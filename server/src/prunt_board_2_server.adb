@@ -566,6 +566,8 @@ begin
 
    My_Controller.Run;
 
+   My_Communications.Runner.Shutdown;
+   GNAT.OS_Lib.OS_Abort;
 exception
    when E : others =>
       Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Information (E));
