@@ -3,6 +3,7 @@
 /alire/
 /config/
 /.dir-locals.el
-stack_usage.csv
-parsetab.py
-parser.out
+/board_support/bb-runtimes/runtimes/
+/stack_usage.csv
+/parsetab.py
+/parser.out

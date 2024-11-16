@@ -8,9 +8,14 @@ maintainers-logins = ["liampwll"]
 executables = ["prunt_board_2_server"]
 [[depends-on]]
 prunt = "*"
+prunt_board_2_shared = "*"
 [[pins]]
 prunt = { url = "https://github.com/Prunt3D/prunt.git" }
+prunt_board_2_shared = { path = "../shared" }
 
 [build-switches]
 release.optimization = ["-O3", "-gnatn", "-fdata-sections", "-ffunction-sections", "-flto=auto", "-fuse-linker-plugin", "-ffat-lto-objects"]
 development.contracts = "Yes"
+
+[[depends-on]]
+gnat_native = "^14.2.1"

@@ -21,4 +21,5 @@ rm -r $BB_RUNTIMES_DIR/$RUNTIMES_DIR
 echo "Old runtimes directory deleted."
 
 # Run the command to generate the run-times
-alr exec -- $BB_RUNTIMES_DIR/build_rts.py --rts-src-descriptor="gnat_rts_sources/lib/gnat/rts-sources.json" --output=$BB_RUNTIMES_DIR/$RUNTIMES_DIR --build $TARGET
+cd ../..
+alr exec -- $BB_RUNTIMES_DIR/build_rts.py --rts-src-descriptor="$BB_RUNTIMES_DIR/gnat_rts_sources/lib/gnat/rts-sources.json" --output=$BB_RUNTIMES_DIR/$RUNTIMES_DIR --build $TARGET

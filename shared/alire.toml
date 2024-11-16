@@ -1,4 +1,4 @@
-name = "prunt_board_2_firmware"
+name = "prunt_board_2_shared"
 description = ""
 version = "0.1.0-dev"
 
@@ -8,9 +8,3 @@ maintainers-logins = ["liampwll"]
 licenses = "GPL-3.0-or-later"
 website = ""
 tags = []
-
-[[depends-on]]
-gnat_arm_elf = "^14.2.1"
-prunt_board_2_shared = "*"
-[[pins]]
-prunt_board_2_shared = { path = "../shared" }

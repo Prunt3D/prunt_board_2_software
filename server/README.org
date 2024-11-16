@@ -5,8 +5,8 @@ make -C embedded_resources
 alr build
 #+end_src
 
-* Building on Raspberry Pi OS
-Fresh install:
+* Build Setup on Raspberry Pi OS
+This is only required once on a fresh install.
 
 #+begin_src
 echo "export PATH=$HOME/bin:$HOME/.alire/bin:\$PATH" >> ~/.bashrc
@@ -15,22 +15,9 @@ wget https://github.com/reznikmm/aarch64-alire-index/releases/download/v2.0.1/al
 unzip alr-2.0.1-bin-aarch64-linux.zip
 alr index --reset-community
 alr index --add git+https://github.com/reznikmm/aarch64-alire-index.git --name aarch64 --before community
-git clone https://github.com/Prunt3D/prunt_board_2_server.git
+git clone https://github.com/Prunt3D/prunt_board_2_software.git
 alr toolchain --select gnat_native=14.2.1 gprbuild=22.0.1
 alr install are
 cd prunt_board_2_server
 alr with gnat_native
-#+end_src
-
-For each release:
-
-#+begin_src
-cd prunt_board_2_server
-cd embedded_resources
-rm -f prunt_board_2_firmware_with_crc.bin
-wget https://github.com/Prunt3D/prunt_board_2_firmware/releases/latest/download/prunt_board_2_firmware_with_crc.bin
-make
-cd ..
-git pull
-alr build
 #+end_src
