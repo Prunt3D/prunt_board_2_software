@@ -73,11 +73,19 @@ package body Heaters is
       --  Not required but may detect an issue elsewhere.
 
       Heater_Setpoint_Holders (Heater).Set (Setpoint);
+      if Setpoint <= 0.0 * celcius then
+         Set_PWM (Heater, 0.0);
+      end if;
    end Set_Setpoint;
 
    procedure Set_PWM (Heater : Heater_Name; Scale : PWM_Scale) is
+      Setpoint : constant Temperature := Heater_Setpoint_Holders (Heater).Get;
    begin
-      Set_Compare_Value (Heater_Timers (Heater).all, Heater_Timer_Channels (Heater), UInt16 (Scale * 50_001.0));
+      if Setpoint <= 0.0 * celcius then
+         Set_Compare_Value (Heater_Timers (Heater).all, Heater_Timer_Channels (Heater), UInt16 (0));
+      else
+         Set_Compare_Value (Heater_Timers (Heater).all, Heater_Timer_Channels (Heater), UInt16 (Scale * 50_001.0));
+      end if;
    end Set_PWM;
 
    function Get_PWM (Heater : Heater_Name) return Dimensionless is
@@ -265,7 +273,7 @@ package body Heaters is
 
          Heater_Update_Holders (Heater).Wait_Next_Reading (Current_Temperature);
 
-         if Last_Temperature = -1_000_000.0 then
+         if Last_Temperature = -1_000_000.0 * celcius then
             --  Heater has only just been switched to PID, or something is broken.
             Last_Temperature := Current_Temperature;
          end if;
