@@ -483,7 +483,7 @@ package body Communications is
    exception
       when E : others =>
          Report_Error (E);
-         raise;
+         accept Shutdown;
    end Runner;
 
 end Communications;
