@@ -108,7 +108,10 @@ package body Fans is
    begin
       Init_Checker.Raise_If_Init_Not_Done;
 
-      Set_Compare_Value (Fan_Timers (Fan).all, Fan_Timer_Channels (Fan), UInt16 (Float (Scale) * 60_001.0));
+      Set_Compare_Value
+        (Fan_Timers (Fan).all,
+         Fan_Timer_Channels (Fan),
+         UInt16 (Float (Scale) * Float (Current_Autoreload (Fan_Timers (Fan).all))));
    end Set_PWM;
 
    function Get_PWM (Fan : Fan_Name) return PWM_Scale is
@@ -117,7 +120,8 @@ package body Fans is
 
       return
         Dimensionless'Min
-          (Dimensionless (UInt16'(Current_Capture_Value (Fan_Timers (Fan).all, Fan_Timer_Channels (Fan)))) / 60_001.0,
+          (Dimensionless (UInt16'(Current_Capture_Value (Fan_Timers (Fan).all, Fan_Timer_Channels (Fan)))) /
+           Dimensionless (Current_Autoreload (Fan_Timers (Fan).all)),
            PWM_Scale'Last);
    end Get_PWM;
 
