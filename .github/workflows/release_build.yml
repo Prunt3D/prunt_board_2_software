@@ -27,6 +27,11 @@ jobs:
         name: prunt_board_2_firmware_with_crc.bin
         path: firmware/bin/prunt_board_2_firmware_with_crc.bin
 
+    - uses: actions/upload-artifact@v4
+      with:
+        name: prunt_board_2_firmware.elf
+        path: firmware/bin/prunt_board_2_firmware.elf
+
   build-linux-x64-server:
     runs-on: ubuntu-latest
 
