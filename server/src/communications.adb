@@ -443,9 +443,10 @@ package body Communications is
                end;
             end loop;
          exception
-            when others =>
+            when E : others =>
                Flush_MCU_Log_Buffer;
-               raise;
+               Report_Error (E);
+               accept Shutdown;
          end;
       end Init;
 
