@@ -51,8 +51,8 @@ package body Thermistors is
          Configure_Common_Properties
            (This           => Thermistor_ADC,
             Mode           => Independent,
-            Prescaler      => Div_1,
-            Clock_Mode     => PCLK2_Div_1,
+            Prescaler      => Div_256,
+            Clock_Mode     => PCLK2_Div_4,
             DMA_Mode       => Disabled,
             Sampling_Delay => Sampling_Delay_5_Cycles);
 
@@ -60,15 +60,21 @@ package body Thermistors is
 
          Configure_Unit (Thermistor_ADC, ADC_Resolution_12_Bits, Right_Aligned);
          Thermistor_ADC_Internal.CFGR2.ROVSE := True;   --  Regular oversampling
-         Thermistor_ADC_Internal.CFGR2.OVSS  := 4;      --  4 bit shift
-         Thermistor_ADC_Internal.CFGR2.OVSR  := 2#111#; --  256 samples
+         Thermistor_ADC_Internal.CFGR2.OVSS  := 1;      --  1 bit shift
+         Thermistor_ADC_Internal.CFGR2.OVSR  := 2#100#; --  32 samples
 
-         Configure_Regular_Conversions
-           (This        => Thermistor_ADC,
-            Continuous  => False,
-            Trigger     => Software_Triggered,
-            Conversions => [for I in 1 .. Thermistor_Name'Pos (Thermistor_Name'Last) + 1 =>
-              (Channel => Thermistor_ADC_Channels (Thermistor_Name'Val (I - 1)), Sample_Time => Sample_640P5_Cycles)]);
+         Thermistor_ADC_Internal.CFGR.EXTSEL := 0;
+         Thermistor_ADC_Internal.CFGR.EXTEN  := 0;
+
+         for C of Thermistor_ADC_Channels loop
+            Set_Sampling_Time (Thermistor_ADC, C, Sample_640P5_Cycles);
+         end loop;
+
+         for R in Regular_Channel_Rank loop
+            Set_Sequence_Position (Thermistor_ADC, Thermistor_ADC_Channels (Current_Thermistor), R);
+         end loop;
+
+         Thermistor_ADC_Internal.SQR1.L := 15;
 
          Enable (Thermistor_ADC);
 
@@ -188,41 +194,55 @@ package body Thermistors is
       end Interpolate;
 
       procedure End_Of_Sequence_Handler is
+         Old_Step       : constant Software_Oversample_Count := Step;
+         Old_Thermistor : constant Thermistor_Name           := Current_Thermistor;
       begin
          Clear_All_Status (Thermistor_DMA_Controller, Thermistor_DMA_Stream);
-         Start_Conversion;
 
-         for Thermistor in Thermistor_Name loop
-            Accumulators (Thermistor) := @ + Accumulator_Type (ADC_Results (Thermistor));
+         for X of ADC_Results loop
+            Accumulator := @ + Accumulator_Type (X);
          end loop;
 
-         if Step = Accumulator_Step'Last then
-            for Thermistor in Thermistor_Name loop
-               Last_Temperatures (Thermistor) :=
-                 Interpolate
-                   (ADC_Value
-                      (Accumulator_Type
-                         (Accumulators (Thermistor) / Accumulator_Type (Accumulator_Step'Last))),
-                    Thermistor);
+         if Step = Software_Oversample_Count'Last then
+            if Current_Thermistor = Thermistor_Name'Last then
+               Current_Thermistor := Thermistor_Name'First;
+            else
+               Current_Thermistor := Thermistor_Name'Succ (@);
+            end if;
+
+            for R in Regular_Channel_Rank loop
+               Set_Sequence_Position (Thermistor_ADC, Thermistor_ADC_Channels (Current_Thermistor), R);
             end loop;
 
-            --  We only raise an exception if a bad thermistor reading is to be used for a heater.
+            Step := Software_Oversample_Count'First;
+         else
+            Step := @ + 1;
+         end if;
+         Start_Conversion;
+
+         if Old_Step = Software_Oversample_Count'Last then
+            Last_Temperatures (Old_Thermistor) :=
+              Interpolate
+                (ADC_Value
+                   (Accumulator_Type
+                      (Accumulator /
+                         (Accumulator_Type (Software_Oversample_Count'Last) *
+                          Accumulator_Type (ADC_Results_Type'Length)))),
+                 Old_Thermistor);
+
             for Heater in Heater_Name loop
-               if Last_Temperatures (Heater_Thermistors (Heater)) = Bad_Reading_Indicator then
-                  raise Bad_Reading_Error
-                    with "Thermistor reading out of range for " & Heater_Thermistors (Heater)'Image;
+               if Old_Thermistor = Heater_Thermistors (Heater) then
+                  if Last_Temperatures (Old_Thermistor) = Bad_Reading_Indicator then
+                     raise Bad_Reading_Error with
+                       "Thermistor reading out of range for " & Heater_Thermistors (Heater)'Image & " (ADC = " &
+                       Accumulator'Image & ")";
+                  else
+                     Heaters.Update_Reading (Heater, Last_Temperatures (Old_Thermistor));
+                  end if;
                end if;
             end loop;
 
-            for Heater in Heater_Name loop
-               Heaters.Update_Reading (Heater, Last_Temperatures (Heater_Thermistors (Heater)));
-            end loop;
-
-            Accumulators := (others => 0);
-
-            Step := Accumulator_Step'First;
-         else
-            Step := @ + 1;
+            Accumulator := 0;
          end if;
       exception
          when E : others =>

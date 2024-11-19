@@ -4,13 +4,14 @@ with Physical_Types;         use Physical_Types;
 
 package Thermistors is
 
-   Loop_Frequency : constant Frequency := 150_000_000.0 * hertz / (256.0 * 4.0 * (640.5 + 12.5) * 32.0);
+   Loop_Frequency : constant Frequency := 150_000_000.0 * hertz / (1024.0 * 32.0 * 4.0 * (247.5 + 12.5) * 1.0);
    --  150 = ADC clock frequency.
+   --  1024 = ADC clock divider.
    --  256 = Oversampling.
    --  4 = Thermistor count.
-   --  640.5 = Sample time.
+   --  247.5 = Sample time.
    --  12.5 = Successive approximation time.
-   --  32 = Software oversampling.
+   --  1 = Software oversampling.
    --  Not included: Time to restart after interrupt.
 
    procedure Init;
@@ -24,9 +25,10 @@ private
 
    Bad_Reading_Indicator : constant Temperature := 1_000_000_000.0 * celcius;
 
-   type ADC_16 is mod 2**16 with Size => 16;
+   type ADC_16 is mod 2**16 with
+     Size => 16;
 
-   type ADC_Results_Type is array (Thermistor_Name) of ADC_16 with
+   type ADC_Results_Type is array (1 .. 1) of ADC_16 with
      Alignment => 2, Pack, Volatile, Volatile_Components;
    ADC_Results : aliased ADC_Results_Type;
 
@@ -42,9 +44,9 @@ private
    type Float_Thermistor_Curve is array (Thermistor_Curve_Index) of Float_Thermistor_Point;
    type Float_Thermistor_Curves_Array is array (Thermistor_Name) of Float_Thermistor_Curve;
 
-   type Accumulator_Step is range 1 .. 32;
-   type Accumulator_Type is range 0 .. Accumulator_Step'Last * 2**16 - 1;
-   type Accumulator_Array_Type is array (Thermistor_Name) of Accumulator_Type;
+   type Software_Oversample_Count is range 1 .. 2;
+
+   type Accumulator_Type is range 0 .. Software_Oversample_Count'Last * ADC_Results_Type'Length * 2**16 - 1;
 
    protected ADC_Handler with
      Linker_Section => ".ccmbss.thermistor_curves", Interrupt_Priority => Thermistor_DMA_Interrupt_Priority
@@ -60,8 +62,9 @@ private
       Init_Done          : Boolean                     := False;
       ISR_Loop_Started   : Boolean                     := False;
       Setup_Done         : Boolean                     := False;
-      Accumulators       : Accumulator_Array_Type      := (others => 0);
-      Step               : Accumulator_Step            := Accumulator_Step'First;
+      Current_Thermistor : Thermistor_Name             := Thermistor_Name'First;
+      Accumulator        : Accumulator_Type            := 0;
+      Step               : Software_Oversample_Count   := Software_Oversample_Count'First;
 
       function Interpolate (ADC_Val : ADC_Value; Thermistor : Thermistor_Name) return Temperature;
       procedure Start_Conversion;

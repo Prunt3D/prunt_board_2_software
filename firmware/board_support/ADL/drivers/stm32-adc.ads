@@ -302,6 +302,26 @@ package STM32.ADC is
          end case;
       end record;
 
+   procedure Set_Sequence_Position
+     (This    : in out Analog_To_Digital_Converter;
+      Channel : Analog_Input_Channel;
+      Rank    : Regular_Channel_Rank)
+     with Inline;
+
+   procedure Set_Sampling_Time
+     (This        : in out Analog_To_Digital_Converter;
+      Channel     : Analog_Input_Channel;
+      Sample_Time : Channel_Sampling_Times)
+     with Inline,
+       Pre => Conversion_Started (This) = False and
+         Injected_Conversion_Started (This) = False;
+
+   procedure Set_Injected_Channel_Sequence_Position
+     (This    : in out Analog_To_Digital_Converter;
+      Channel : Analog_Input_Channel;
+      Rank    : Injected_Channel_Rank)
+     with Inline;
+
    Software_Triggered : constant Regular_Channel_Conversion_Trigger :=
      (Enabler => Trigger_Disabled);
 
