@@ -141,8 +141,12 @@ procedure Prunt_Board_2_Server is
       for T in Thermistor_Name loop
          for I in Thermistor_Curve_Index loop
             if Thermistors (T).Kind = Disabled_Kind then
-               Message.Thermistor_Curves (T) (I).Value := 0;
-               Message.Thermistor_Curves (T) (I).Temp  := Fixed_Point_Celcius'Last;
+               if I = Thermistor_Curve_Index'First then
+                  Message.Thermistor_Curves (T) (I).Value := ADC_Value'First;
+               else
+                  Message.Thermistor_Curves (T) (I).Value := ADC_Value'Last;
+               end if;
+               Message.Thermistor_Curves (T) (I).Temp  := 0.0;
             else
                declare
                   Temp  : constant Temperature :=

@@ -230,15 +230,14 @@ package body Thermistors is
                           Accumulator_Type (ADC_Results_Type'Length)))),
                  Old_Thermistor);
 
+            if Last_Temperatures (Old_Thermistor) = Bad_Reading_Indicator then
+               raise Bad_Reading_Error with
+                 "Thermistor reading out of range for " & Old_Thermistor'Image & " (ADC = " & Accumulator'Image & ")";
+            end if;
+
             for Heater in Heater_Name loop
                if Old_Thermistor = Heater_Thermistors (Heater) then
-                  if Last_Temperatures (Old_Thermistor) = Bad_Reading_Indicator then
-                     raise Bad_Reading_Error with
-                       "Thermistor reading out of range for " & Heater_Thermistors (Heater)'Image & " (ADC = " &
-                       Accumulator'Image & ")";
-                  else
-                     Heaters.Update_Reading (Heater, Last_Temperatures (Old_Thermistor));
-                  end if;
+                  Heaters.Update_Reading (Heater, Last_Temperatures (Old_Thermistor));
                end if;
             end loop;
 
