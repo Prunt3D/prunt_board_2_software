@@ -51,8 +51,8 @@ package body Thermistors is
          Configure_Common_Properties
            (This           => Thermistor_ADC,
             Mode           => Independent,
-            Prescaler      => Div_256,
-            Clock_Mode     => PCLK2_Div_4,
+            Prescaler      => Div_128,
+            Clock_Mode     => PCLK2_Div_1,
             DMA_Mode       => Disabled,
             Sampling_Delay => Sampling_Delay_5_Cycles);
 
@@ -60,8 +60,8 @@ package body Thermistors is
 
          Configure_Unit (Thermistor_ADC, ADC_Resolution_12_Bits, Right_Aligned);
          Thermistor_ADC_Internal.CFGR2.ROVSE := True;   --  Regular oversampling
-         Thermistor_ADC_Internal.CFGR2.OVSS  := 1;      --  1 bit shift
-         Thermistor_ADC_Internal.CFGR2.OVSR  := 2#100#; --  32 samples
+         Thermistor_ADC_Internal.CFGR2.OVSS  := 3;      --  2 bit shift
+         Thermistor_ADC_Internal.CFGR2.OVSR  := 2#110#; --  128 samples
 
          Thermistor_ADC_Internal.CFGR.EXTSEL := 0;
          Thermistor_ADC_Internal.CFGR.EXTEN  := 0;
@@ -74,7 +74,7 @@ package body Thermistors is
             Set_Sequence_Position (Thermistor_ADC, Thermistor_ADC_Channels (Current_Thermistor), R);
          end loop;
 
-         Thermistor_ADC_Internal.SQR1.L := 15;
+         Thermistor_ADC_Internal.SQR1.L := ADC_Results_Type'Length - 1;
 
          Enable (Thermistor_ADC);
 

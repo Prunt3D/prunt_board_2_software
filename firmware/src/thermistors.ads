@@ -4,16 +4,17 @@ with Physical_Types;         use Physical_Types;
 
 package Thermistors is
 
-   Loop_Frequency : constant Frequency := 150_000_000.0 * hertz / (1024.0 * 32.0 * 4.0 * (247.5 + 12.5) * 1.0);
+   Loop_Frequency : constant Frequency := 150_000_000.0 * hertz / (128.0 * 128.0 * 4.0 * (640.5 + 12.5) * 1.0);
    --  150 = ADC clock frequency.
-   --  1024 = ADC clock divider.
-   --  256 = Oversampling.
+   --  128 = ADC clock divider.
+   --  128 = Oversampling.
    --  4 = Thermistor count.
    --  247.5 = Sample time.
    --  12.5 = Successive approximation time.
    --  1 = Software oversampling.
    --  Not included: Time to restart after interrupt.
-
+   --
+   --  Assuming a sample-and-hold capacitor of 10 pF, these values give a worst case offset of <800uV, or 3.3V / 2^12.
    procedure Init;
    procedure Setup (Thermistor_Curves : access Thermistor_Curves_Array; Heater_Map : Heater_Thermistor_Map);
    procedure Start_ISR_Loop;
@@ -44,7 +45,7 @@ private
    type Float_Thermistor_Curve is array (Thermistor_Curve_Index) of Float_Thermistor_Point;
    type Float_Thermistor_Curves_Array is array (Thermistor_Name) of Float_Thermistor_Curve;
 
-   type Software_Oversample_Count is range 1 .. 2;
+   type Software_Oversample_Count is range 1 .. 1;
 
    type Accumulator_Type is range 0 .. Software_Oversample_Count'Last * ADC_Results_Type'Length * 2**16 - 1;
 
