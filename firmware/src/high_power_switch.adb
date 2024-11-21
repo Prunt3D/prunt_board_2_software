@@ -15,6 +15,7 @@ package body High_Power_Switch is
 
       Disable (High_Power_Switch_ADC);
 
+      --  Shared with thermistors.
       Configure_Common_Properties
         (This           => High_Power_Switch_ADC,
          Mode           => Independent,
