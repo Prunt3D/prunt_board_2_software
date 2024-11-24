@@ -480,12 +480,12 @@ package body Communications is
                --  Send a status message after a timeout, but only if setup is done and we are in a safe stop state.
                --  It is important to have a short delay here since a lot of TMC messages are sent during setup.
             end select;
+         exception
+            when E : others =>
+               Report_Error (E);
+               accept Shutdown;
          end;
       end loop;
-   exception
-      when E : others =>
-         Report_Error (E);
-         accept Shutdown;
    end Runner;
 
 end Communications;
