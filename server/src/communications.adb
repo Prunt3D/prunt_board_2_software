@@ -349,9 +349,9 @@ package body Communications is
                         exit when Bytes_Read = 1;
                      end loop;
                      exit when Byte (1) = 254;
-                     if Byte (1) = 253 then
-                        raise Constraint_Error with "Got exception from MCU. Details logged to console. (1)";
-                     elsif Byte (1) < 128 then
+                     --  We don't raise an exception when we see an MCU exception here as it is very likely to just be
+                     --  a timeout from a previous session which is still stuck in the buffer.
+                     if Byte (1) < 128 then
                         Log_MCU_Character (Character'Val (Byte (1)));
                      end if;
                   end loop;
