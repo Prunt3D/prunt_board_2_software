@@ -473,11 +473,12 @@ package body Communications is
                accept Shutdown;
                exit;
             or when Last_Received_Index > Message_Index'First and In_Safe_Stop_State =>
-               delay 0.05;
+               delay 0.02;
                Message_To_Send.Content :=
                  (Kind => Status_Kind, Index => <>, TMC_Write_Data => (others => 0), TMC_Read_Data => (others => 0));
                Send_And_Handle_Reply (Message_To_Send, Received_Message);
                --  Send a status message after a timeout, but only if setup is done and we are in a safe stop state.
+               --  It is important to have a short delay here since a lot of TMC messages are sent during setup.
             end select;
          end;
       end loop;
