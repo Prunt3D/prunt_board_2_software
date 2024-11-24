@@ -202,11 +202,7 @@ package body Thermistors is
          if Step = Accumulator_Step'Last then
             for Thermistor in Thermistor_Name loop
                Last_Temperatures (Thermistor) :=
-                 Interpolate
-                   (ADC_Value
-                      (Accumulator_Type
-                         (Accumulators (Thermistor) / Accumulator_Type (Accumulator_Step'Last))),
-                    Thermistor);
+                 Interpolate (ADC_Value (Accumulators (Thermistor)), Thermistor);
 
                if Last_Temperatures (Thermistor) = Bad_Reading_Indicator then
                   raise Bad_Reading_Error with
