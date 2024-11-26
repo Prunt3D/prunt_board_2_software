@@ -130,6 +130,7 @@ package body Fans is
             Prescaler           => Prescaler,
             Period              => Period);
          Configure (This => Fan_Timers (Fan).all, Prescaler => UInt16 (Prescaler), Period => Period);
+         Set_PWM (Fan, Last_PWMs (Fan));
       end Reconfigure;
 
       procedure Set_PWM (Fan : Fan_Name; Scale : Fixed_Point_PWM_Scale) is
@@ -147,6 +148,8 @@ package body Fans is
                Fan_Timer_Channels (Fan),
                UInt16 (Float (Scale) * Float (Current_Autoreload (Fan_Timers (Fan).all))));
          end if;
+
+         Last_PWMs (Fan) := Scale;
       end Set_PWM;
 
       function Get_PWM (Fan : Fan_Name) return PWM_Scale is
