@@ -19,7 +19,13 @@ package body STM32.COMP is
       This.CSR.EN := True;
       --  Delay 5 us for COMP startup time. See DS12288 Rev 5 chapter 5.3.22
       --  Comparator characteristics.
-      delay until Clock + Microseconds (5);
+      declare
+         Start_Time : Time := Clock;
+      begin
+         loop
+            exit when Clock > Start_Time + Microseconds (5);
+         end loop;
+      end;
    end Enable;
 
    -------------
