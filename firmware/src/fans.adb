@@ -54,6 +54,7 @@ package body Fans is
             Configure (This => Tim, Prescaler => 74, Period => 60_000); --  33.33 Hz
             Configure_Channel_Output
               (This => Tim, Channel => Channel, Mode => PWM1, State => Enable, Pulse => 0, Polarity => Polarity);
+            Set_Autoreload_Preload (Tim, True);
             Enable (Tim);
          end Init_PWM_Timer;
 
@@ -131,8 +132,10 @@ package body Fans is
             Requested_Frequency => UInt32 (PWM_Frequency),
             Prescaler           => Prescaler,
             Period              => Period);
+         Disable_Channel (Fan_Timers (Fan).all, Fan_Timer_Channels (Fan));
          Configure (This => Fan_Timers (Fan).all, Prescaler => UInt16 (Prescaler), Period => Period);
          Set_PWM (Fan, Last_PWMs (Fan));
+         Enable_Channel (Fan_Timers (Fan).all, Fan_Timer_Channels (Fan));
       end Reconfigure;
 
       procedure Set_PWM (Fan : Fan_Name; Scale : Fixed_Point_PWM_Scale) is
@@ -154,11 +157,7 @@ package body Fans is
 
       function Get_PWM (Fan : Fan_Name) return PWM_Scale is
       begin
-         return
-           Dimensionless'Min
-             (Dimensionless (UInt16'(Current_Capture_Value (Fan_Timers (Fan).all, Fan_Timer_Channels (Fan)))) /
-              Dimensionless (Current_Autoreload (Fan_Timers (Fan).all)),
-              PWM_Scale'Last);
+         return PWM_Scale (Last_PWMs (Fan));
       end Get_PWM;
 
       function Get_Tach_Counter (Fan : Fan_Name) return Tach_Counter is
