@@ -122,7 +122,7 @@ package Hardware_Configuration is
    Fan_Timers              : constant array (Fan_Name) of access Timer                  :=
      (Fan_1 => Timer_20'Access, Fan_2 => Timer_17'Access, Fan_3 => Timer_2'Access, Fan_4 => Timer_15'Access);
    Fan_Timer_Channels      : constant array (Fan_Name) of Timer_Channel                 :=
-     (Fan_1 => Channel_2, Fan_2 => Channel_1, Fan_3 => Channel_3, Fan_4 => Channel_1);
+     (Fan_1 => Channel_1, Fan_2 => Channel_1, Fan_3 => Channel_3, Fan_4 => Channel_1);
    Fan_Timer_Complementary : constant array (Fan_Name) of Boolean                       :=
      (Fan_1 => False, Fan_2 => False, Fan_3 => False, Fan_4 => True);
    Fan_Timer_Polarities    : constant array (Fan_Name) of Timer_Output_Compare_Polarity :=
