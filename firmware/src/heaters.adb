@@ -78,10 +78,10 @@ package body Heaters is
       end if;
    end Set_Setpoint;
 
-   procedure Set_PWM (Heater : Heater_Name; Scale : PWM_Scale) is
+   procedure Set_PWM (Heater : Heater_Name; Scale : PWM_Scale; Override_Forced_Zero : Boolean := False) is
       Setpoint : constant Temperature := Heater_Setpoint_Holders (Heater).Get;
    begin
-      if Setpoint <= 0.0 * celcius then
+      if Setpoint <= 0.0 * celcius and not Override_Forced_Zero then
          Set_Compare_Value (Heater_Timers (Heater).all, Heater_Timer_Channels (Heater), UInt16 (0));
       else
          Set_Compare_Value (Heater_Timers (Heater).all, Heater_Timer_Channels (Heater), UInt16 (Scale * 50_001.0));
@@ -345,7 +345,8 @@ package body Heaters is
       Max_Cycles := Natural (Params.Max_Cycles);
       Setpoint   := Temperature (Params.PID_Tuning_Temperature);
 
-      Set_PWM (Heater, Bias);
+      Heater_Setpoint_Holders (Heater).Set (0.0 * celcius);
+      Set_PWM (Heater, Bias, Override_Forced_Zero => True);
 
       loop
          Params := Heater_Heater_Params (Heater).Get;
@@ -370,7 +371,7 @@ package body Heaters is
 
          if Heating and Current_Temperature > Setpoint and Loop_Time > T2 + Seconds (5) then
             Heating := False;
-            Set_PWM (Heater, (Bias - D) / 2.0);
+            Set_PWM (Heater, (Bias - D) / 2.0, Override_Forced_Zero => True);
             T1     := Loop_Time;
             T_High := T1 - T2;
             Max_T  := Setpoint;
@@ -422,7 +423,7 @@ package body Heaters is
                end if;
             end if;
 
-            Set_PWM (Heater, (Bias + D) / 2.0);
+            Set_PWM (Heater, (Bias + D) / 2.0, Override_Forced_Zero => True);
 
             Server_Communication.Transmit_String (Cycles'Image);
             Server_Communication.Transmit_String ("/");
@@ -438,6 +439,7 @@ package body Heaters is
             Set_PWM (Heater, 0.0);
             Server_Communication.Transmit_String_Line ("PID autotune done.");
 
+            Heater_Setpoint_Holders (Heater).Set (0.0 * celcius);
             Heater_Heater_Params (Heater).Set
               ((Kind                       => Disabled_Kind,
                 Check_Max_Cumulative_Error => 0.0,

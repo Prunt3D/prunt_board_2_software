@@ -98,7 +98,7 @@ private
             Goal_Time                => Clock));
    end Safety_Checker;
 
-   procedure Set_PWM (Heater : Heater_Name; Scale : PWM_Scale) with
+   procedure Set_PWM (Heater : Heater_Name; Scale : PWM_Scale; Override_Forced_Zero : Boolean := False) with
      Pre => Scale >= 0.0 and Scale <= 1.0;
    function Get_PWM (Heater : Heater_Name) return Dimensionless with
      Post => Get_PWM'Result >= 0.0 and Get_PWM'Result <= 1.0;
