@@ -1,5 +1,6 @@
 with Messages; use Messages;
 with Init_Checkers;
+with HAL;
 
 package Server_Communication is
 
@@ -27,4 +28,6 @@ private
    procedure Set_TX_Message_CRC;
    procedure Transmit_TX_Message;
 
+   Kalico_Persistent_Boot_Flag : HAL.UInt32 with
+     Volatile => True, Linker_Section => ".data_persistent.kalico_boot_flag";
 end Server_Communication;

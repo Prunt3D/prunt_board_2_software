@@ -90,6 +90,15 @@ SECTIONS
   } > sram_da
   __data_words = (__data_end - __data_start) >> 2;
 
+  .data_persistent (NOLOAD):
+  {
+    __data_persistent_start = .;
+    __kalico_boot_flag = .;
+    *(.data_persistent.kalico_boot_flag)
+    . = ALIGN(0x4);
+    __data_persistent_end = .;
+  } > ccm_persistent
+
   __ccmdata_load = __rom_end + (__data_words << 2);
   .ccmdata : AT (__ccmdata_load)
   {
