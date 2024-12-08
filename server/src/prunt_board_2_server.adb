@@ -19,20 +19,20 @@
 --                                                                         --
 -----------------------------------------------------------------------------
 
-with Prunt;       use Prunt;
+with Prunt;             use Prunt;
+with Messages;          use Messages;
+with Ada.Command_Line;  use Ada.Command_Line;
+with Prunt.Thermistors; use Prunt.Thermistors;
+with Prunt.Heaters;     use Prunt.Heaters;
 with Prunt.Controller;
 with Ada.Text_IO;
 with Ada.Exceptions;
 with GNAT.OS_Lib;
 with Prunt.Controller_Generic_Types;
-with Messages;    use Messages;
-with Ada.Command_Line;
 with Communications;
 with GNAT.Serial_Communications;
-with Prunt.Thermistors; use Prunt.Thermistors;
 with Prunt.TMC_Types.TMC2240;
 with Ada.Containers.Generic_Constrained_Array_Sort;
-with Prunt.Heaters; use Prunt.Heaters;
 with UXStrings;
 with System.Multiprocessors;
 
@@ -43,7 +43,6 @@ procedure Prunt_Board_2_Server is
    Loop_Move_Multiplier : constant := 1024;
 
    function Argument_Value (Switch : UXStrings.UXString; Default : UXStrings.UXString) return String is
-      use Ada.Command_Line;
       use UXStrings;
       Arg1, Arg2 : UXString;
    begin
@@ -565,10 +564,23 @@ procedure Prunt_Board_2_Server is
    end Log;
 begin
    if Argument_Value ("--serial-port=", "") = "" then
-      raise Constraint_Error with "Usage: " & Ada.Command_Line.Command_Name & " --serial-port=<serial port path>";
+      raise Constraint_Error with
+        "Usage: " & Ada.Command_Line.Command_Name & " --serial-port=<serial port path> [--reboot-to-kalico]";
    end if;
 
    My_Communications.Runner.Init (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")));
+
+   for Arg in 1 .. Argument_Count loop
+      if Argument (Arg) = "--reboot-to-kalico" then
+         My_Communications.Runner.Send_Message
+           ((Kind           => Kalico_Reboot_Kind,
+             Index          => <>,
+             TMC_Write_Data => (others => 0),
+             TMC_Read_Data  => (others => 0)));
+         My_Communications.Runner.Shutdown;
+         GNAT.OS_Lib.OS_Abort;
+      end if;
+   end loop;
 
    My_Controller.Run;
 

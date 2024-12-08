@@ -380,9 +380,9 @@ package body Communications is
 
                   Log ("Firmware version " & Received_Message.Content.Version'Image & ".");
 
-                  exit when Received_Message.Content.Version = 2;
+                  exit when Received_Message.Content.Version = 3;
 
-                  Log ("Firmware version 2 required.");
+                  Log ("Firmware version 3 required.");
 
                   if Already_Tried_Update then
                      raise Constraint_Error with "Board firmware update failed.";
@@ -452,7 +452,7 @@ package body Communications is
 
       loop
          declare
-            Message_To_Send  : aliased Message_From_Server;
+            Message_To_Send  : aliased Message_From_Server := (others => <>);
             Received_Message : aliased Message_From_Client;
          begin
             select
@@ -481,9 +481,17 @@ package body Communications is
                --  It is important to have a short delay here since a lot of TMC messages are sent during setup.
             end select;
          exception
+            when E : UART_Timeout_Error =>
+               if Message_To_Send.Content.Kind /= Kalico_Reboot_Kind then
+                  --  TODO: Get a reply here before restarting instead of just waiting for a timeout.
+                  Report_Error (E);
+               end if;
+               accept Shutdown;
+               exit;
             when E : others =>
                Report_Error (E);
                accept Shutdown;
+               exit;
          end;
       end loop;
    end Runner;

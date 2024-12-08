@@ -1,0 +1,3 @@
+[submodule "kalico"]
+	path = kalico
+	url = https://github.com/Prunt3D/kalico_for_prunt_board_2.git

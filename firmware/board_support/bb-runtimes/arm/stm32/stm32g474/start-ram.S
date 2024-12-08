@@ -43,11 +43,29 @@ __vectors0:
 	.thumb_func
 	.globl _start_ram
 _start_ram:
+	movw	r0, #:lower16:__kalico_boot_flag
+	movt	r0, #:upper16:__kalico_boot_flag
+	ldr	r1, [r0]
+	movw	r2, #0x93F0
+	movt	r2, #0x0B1C
+	cmp	r1, r2
+	bne	prunt_boot
+	mov	r1, #0
+	str	r1, [r0]
+	movw	r0, #0x2000
+	movt	r0, #0x0803
+	ldr	sp, [r0]
+	movw	r0, #0x2004
+	movt	r0, #0x0803
+	ldr	r0, [r0]
+	bx	r0
+
+prunt_boot:
 	/* Init stack */
 	ldr	sp,.LinitSp
 
-        /* Enable FPU and cache when appropriate */
-        bl _stm32_start_common
+	/* Enable FPU and cache when appropriate */
+	bl	_stm32_start_common
 
 	/* Clear .bss */
 	movw	r0,#:lower16:__bss_start

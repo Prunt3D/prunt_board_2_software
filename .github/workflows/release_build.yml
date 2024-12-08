@@ -11,16 +11,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
 
     - uses: alire-project/setup-alire@b607671067a8ca5d7b7f4a12dadb4dc009cd2cc7
 
     - run: >
+        sudo apt-get install -y python3-dev libffi-dev build-essential libncurses-dev gcc-arm-none-eabi binutils-arm-none-eabi libusb-1.0 &&
+        make -C kalico &&
         cd firmware &&
         bash -c 'cd board_support/bb-runtimes/ && ./runtimes.sh' &&
         bash -c 'cd firmware_patcher && alr build' &&
         ADL_BUILD=Production alr build &&
         alr exec -- arm-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin &&
-        ./firmware_patcher/bin/firmware_patcher bin/prunt_board_2_firmware.bin bin/prunt_board_2_firmware_with_crc.bin
+        ./firmware_patcher/bin/firmware_patcher bin/prunt_board_2_firmware.bin ../kalico/out/klipper.bin bin/prunt_board_2_firmware_with_crc.bin
 
     - uses: actions/upload-artifact@v4
       with:

@@ -87,6 +87,15 @@ SECTIONS
     __data_end = .;
   } > sram_da
 
+  .data_persistent (NOLOAD):
+  {
+    __data_persistent_start = .;
+    __kalico_boot_flag = .;
+    *(.data_persistent.kalico_boot_flag)
+    . = ALIGN(0x4);
+    __data_persistent_end = .;
+  } > ccm_persistent
+
   .ccmdata :
   {
     __ccmdata_start = .;

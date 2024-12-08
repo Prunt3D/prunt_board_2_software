@@ -19,6 +19,7 @@ with Heaters;
 with Fans;
 with MCU_Temperature;
 with System.Machine_Code;
+with System.Machine_Reset;
 
 package body Server_Communication is
 
@@ -125,7 +126,7 @@ package body Server_Communication is
 
       Set_TX_Message_Kind (Hello_Kind);
       TX_Message.Content.Index                 := Last_Message_Index;
-      TX_Message.Content.Version               := 2;
+      TX_Message.Content.Version               := 3;
       TX_Message.Content.Client_Message_Length := Message_From_Client'Value_Size / 4;
       TX_Message.Content.Server_Message_Length := Message_From_Server'Value_Size / 8;
       TX_Message.Content.ID                    :=
@@ -201,11 +202,17 @@ package body Server_Communication is
                raise Constraint_Error
                  with "Server sent wrong message index. Expected " & Last_Message_Index'Image & " but got " &
                  RX_Message.Content.Index'Image;
-            elsif not Setup_Done and RX_Message.Content.Kind /= Setup_Kind and
-              RX_Message.Content.Kind not in Firmware_Update_Start_Kind .. Firmware_Update_Done_Kind
+            elsif not Setup_Done and
+              RX_Message.Content.Kind not in
+                Setup_Kind | Kalico_Reboot_Kind | Firmware_Update_Start_Kind | Firmware_Update_Data_Kind
+                | Firmware_Update_Done_Kind
             then
                raise Constraint_Error with "Expected setup message, server sent " & RX_Message.Content.Kind'Image;
-            elsif Setup_Done and RX_Message.Content.Kind = Setup_Kind then
+            elsif Setup_Done and
+              RX_Message.Content.Kind in
+                Setup_Kind | Kalico_Reboot_Kind | Firmware_Update_Start_Kind | Firmware_Update_Data_Kind
+                | Firmware_Update_Done_Kind
+            then
                raise Constraint_Error with "Server sent multiple setup messages.";
             else
                Last_Message_Index := Last_Message_Index + 1;
@@ -297,6 +304,11 @@ package body Server_Communication is
                      High_Power_Switch.Disable;
                   when Fan_Reconfigure_Kind =>
                      Fans.Reconfigure (RX_Message.Content.Fan, RX_Message.Content.Fan_PWM_Frequency);
+                  when Kalico_Reboot_Kind =>
+                     Kalico_Persistent_Boot_Flag := 16#0B1C_93F0#;
+                     Heaters.Make_Safe;
+                     High_Power_Switch.Disable;
+                     System.Machine_Reset.Stop;
                   when Firmware_Update_Start_Kind =>
                      Set_TX_Message_Kind (Firmware_Update_Reply_Kind);
                      if not STM32.Flash.Is_Locked (Flash) then

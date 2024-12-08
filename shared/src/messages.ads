@@ -242,6 +242,7 @@ package Messages is
       Enable_High_Power_Switch_Kind,
       Disable_High_Power_Switch_Kind,
       Fan_Reconfigure_Kind,
+      Kalico_Reboot_Kind,
       Firmware_Update_Start_Kind,
       Firmware_Update_Data_Kind,
       Firmware_Update_Done_Kind) with
@@ -262,6 +263,7 @@ package Messages is
       Enable_High_Power_Switch_Kind      => 140,
       Disable_High_Power_Switch_Kind     => 141,
       Fan_Reconfigure_Kind               => 142,
+      Kalico_Reboot_Kind                 => 143,
       Firmware_Update_Start_Kind         => 252,
       Firmware_Update_Data_Kind          => 253,
       Firmware_Update_Done_Kind          => 254);
@@ -312,6 +314,8 @@ package Messages is
                when Fan_Reconfigure_Kind =>
                   Fan               : Fan_Name;
                   Fan_PWM_Frequency : Fixed_Point_Fan_PWM_Frequency;
+               when Kalico_Reboot_Kind =>
+                  null;
                when Firmware_Update_Start_Kind | Firmware_Update_Data_Kind | Firmware_Update_Done_Kind =>
                   null;
             end case;

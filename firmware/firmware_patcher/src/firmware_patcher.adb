@@ -26,47 +26,78 @@ procedure Firmware_Patcher is
       return Result;
    end To_Stream_Element_Array;
 
-   File_Data     : access Ada.Streams.Stream_Element_Array;
-   Stream_Length : Count;
-   Input, Output : Ada.Streams.Stream_IO.File_Type;
-   Bytes_Read    : Ada.Streams.Stream_Element_Offset;
+   Prunt_File_Data, Kalico_File_Data, Out_File_Data : access Ada.Streams.Stream_Element_Array;
+   Prunt_Stream_Length, Kalico_Stream_Length        : Count;
+   Prunt_Input, Kalico_Input, Output                : Ada.Streams.Stream_IO.File_Type;
+   Bytes_Read                                       : Ada.Streams.Stream_Element_Offset;
 begin
-   if Argument_Count /= 2 then
-      raise Constraint_Error with "Usage: " & Command_Name & " <input_file> <output_file>";
+   if Argument_Count /= 3 then
+      raise Constraint_Error with "Usage: " & Command_Name & " <prunt_binary> <kalico_binary> <output_file>";
    end if;
 
-   Open (Input, In_File, Argument (1));
+   Open (Prunt_Input, In_File, Argument (1));
+   Open (Kalico_Input, In_File, Argument (2));
 
-   Stream_Length := Size (Input);
+   Prunt_Stream_Length  := Size (Prunt_Input);
+   Kalico_Stream_Length := Size (Kalico_Input);
 
-   if Stream_Length > 255 * 1_024 then
-      raise Constraint_Error with "File too big.";
+   if Prunt_Stream_Length > 200 * 1_024 then
+      raise Constraint_Error with "Prunt binary too big.";
    end if;
 
-   if Stream_Length mod 4 /= 0 then
-      raise Constraint_Error with
-        "File size must be multiple of 4. "
-        & "Alternatively this program may be modified to add 0xFF padding to the end of the input file).";
+   if Kalico_Stream_Length > 55 * 1_024 then
+      raise Constraint_Error with "Kalico binary too big.";
    end if;
 
-   File_Data := new Stream_Element_Array (1 .. Stream_Element_Offset (Stream_Length));
-   Read (Input, File_Data.all, Bytes_Read);
-
-   if Count (Bytes_Read) /= Stream_Length then
-      raise Constraint_Error with "Did not read whole file.";
+   if Kalico_Stream_Length mod 4 /= 0 then
+      raise Constraint_Error
+        with "Kalico file size must be multiple of 4. " &
+        "Alternatively this program may be modified to add 0xFF padding to the end of the input file.";
    end if;
 
-   Close (Input);
+   Prunt_File_Data := new Stream_Element_Array (1 .. Stream_Element_Offset (Prunt_Stream_Length));
+   Read (Prunt_Input, Prunt_File_Data.all, Bytes_Read);
+   if Count (Bytes_Read) /= Prunt_Stream_Length then
+      raise Constraint_Error with "Did not read whole Prunt file.";
+   end if;
+   Close (Prunt_Input);
 
-   Create (Output, Out_File, Argument (2));
-   Write (Output, File_Data.all);
-   Write (Output, To_Stream_Element_Array (Unsigned_32 (Stream_Length / 4) + 1));
+   Kalico_File_Data := new Stream_Element_Array (1 .. Stream_Element_Offset (Kalico_Stream_Length));
+   Read (Kalico_Input, Kalico_File_Data.all, Bytes_Read);
+   if Count (Bytes_Read) /= Kalico_Stream_Length then
+      raise Constraint_Error with "Did not read whole Kalico file.";
+   end if;
+   Close (Kalico_Input);
+
+   Create (Output, Out_File, Argument (3));
+   Write (Output, Prunt_File_Data.all);
+
+   for I in Prunt_Stream_Length + 1 .. 200 * 1_024 loop
+      Write (Output, Stream_Element_Array'(1 => 16#FF#));
+   end loop;
+
+   Write (Output, Kalico_File_Data.all);
+
+   Close (Output);
+   Open (Output, In_File, Argument (3));
+   Out_File_Data := new Stream_Element_Array (1 .. Stream_Element_Offset (Kalico_Stream_Length + 200 * 1_024));
+   Read (Output, Out_File_Data.all, Bytes_Read);
+   if Count (Bytes_Read) /= Kalico_Stream_Length + 200 * 1_024 then
+      raise Constraint_Error with "Did not read whole output file.";
+   end if;
+   Close (Output);
+
+   Open (Output, Append_File, Argument (3));
+
+   Write (Output, To_Stream_Element_Array (Unsigned_32 ((Kalico_Stream_Length + 200 * 1_024) / 4) + 1));
    Write
      (Output,
       To_Stream_Element_Array
-        (Calculate_CRC32 (File_Data.all & To_Stream_Element_Array (Unsigned_32 (Stream_Length / 4) + 1))));
+        (Calculate_CRC32
+           (Out_File_Data.all &
+            To_Stream_Element_Array (Unsigned_32 ((Kalico_Stream_Length + 200 * 1_024) / 4) + 1))));
 
-   if Stream_Length mod 8 /= 0 then
+   if Kalico_Stream_Length mod 8 /= 0 then
       --  The stm32g4 only allows writing of double words and stm32flash fills these with 0 instead of FF.
       Write (Output, To_Stream_Element_Array (16#FFFF_FFFF#));
    end if;
