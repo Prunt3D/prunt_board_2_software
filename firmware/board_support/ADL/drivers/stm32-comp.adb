@@ -20,7 +20,7 @@ package body STM32.COMP is
       --  Delay 5 us for COMP startup time. See DS12288 Rev 5 chapter 5.3.22
       --  Comparator characteristics.
       declare
-         Start_Time : Time := Clock;
+         Start_Time : constant Time := Clock;
       begin
          loop
             exit when Clock > Start_Time + Microseconds (5);
