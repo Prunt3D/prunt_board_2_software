@@ -144,9 +144,13 @@ package body Server_Communication is
                Timeout        => Seconds (1),
                Result         => Error);
 
-            exit when Error = DMA_No_Error;
+            --  When the isolated side is first powered on we can get a framing error here.
+            exit when Are_All_Statuses_Clear and Error = DMA_No_Error;
 
-            --  TODO: Detect framing errors and use them to stop polling.
+            for S in USART_Status_Flag loop
+               Clear_Status (Comms_UART, S);
+            end loop;
+
             if Error = DMA_Transfer_Error or Error = DMA_Device_Error then
                raise DMA_Error with Error'Image;
             end if;
