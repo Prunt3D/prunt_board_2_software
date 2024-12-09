@@ -34,7 +34,7 @@ begin
    Heaters.Make_Safe;
 
    --  Unused floating pins and BOOT0.
-   Configure_IO (Points => (PD2, PF0), Config => (Mode => Mode_In, Resistors => Pull_Down));
+   Configure_IO (Points => (PD2, PG10), Config => (Mode => Mode_In, Resistors => Pull_Down));
 
    --  Temporary: Fan tachs.
    Configure_IO (Points => (PA7, PB1, PB0, PA0), Config => (Mode => Mode_In, Resistors => Floating));
