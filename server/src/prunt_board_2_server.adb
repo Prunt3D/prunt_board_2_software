@@ -33,7 +33,6 @@ with Communications;
 with GNAT.Serial_Communications;
 with Prunt.TMC_Types.TMC2240;
 with Ada.Containers.Generic_Constrained_Array_Sort;
-with UXStrings;
 with System.Multiprocessors;
 
 use type Prunt.TMC_Types.TMC2240.UART_Node_Address;
@@ -42,17 +41,18 @@ procedure Prunt_Board_2_Server is
 
    Loop_Move_Multiplier : constant := 1024;
 
-   function Argument_Value (Switch : UXStrings.UXString; Default : UXStrings.UXString) return String is
-      use UXStrings;
-      Arg1, Arg2 : UXString;
+   function Argument_Value (Switch, Default : String) return String is
+      use Ada.Command_Line;
    begin
-      for Arg in 1 .. Argument_Count loop
-         Arg1 := From_UTF_8 (Argument (Arg));
-         if Arg1.Length > Switch.Length and then Arg1.Slice (Arg1.First, Arg1.First + Switch.Length - 1) = Switch then
-            Arg2 := Arg1.Slice (Arg1.First + Switch.Length, Arg1.Last);
+      --  The last argument takes priority in case of duplicates.
+      for Arg in reverse 1 .. Argument_Count loop
+         if Argument (Arg)'Length > Switch'Length
+           and then Argument (Arg) (Argument (Arg)'First .. Argument (Arg)'First + Switch'Length - 1) = Switch
+         then
+            return Argument (Arg) (Argument (Arg)'First + Switch'Length .. Argument (Arg)'Last);
          end if;
       end loop;
-      return To_UTF_8 (if Arg2 /= Null_UXString then Arg2 else Default);
+      return Default;
    end Argument_Value;
 
    type Board_Temperature_Probe_Name is (Main_MCU);
@@ -526,7 +526,7 @@ procedure Prunt_Board_2_Server is
       Reset_Position             => Reset_Position,
       Wait_Until_Idle            => Wait_Until_Idle,
       Shutdown                   => Shutdown,
-      Config_Path                => "./prunt_board_2.toml");
+      Config_Path                => "./prunt_board_2.json");
 
    procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence) is
    begin
