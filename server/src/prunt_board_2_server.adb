@@ -89,9 +89,9 @@ procedure Prunt_Board_2_Server is
 
    procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence);
 
-   procedure Report_Temperature (Thermistor : Thermistor_Name; Temp : Fixed_Point_Celcius);
+   procedure Report_Temperature (Thermistor : Thermistor_Name; Temp : Fixed_Point_Celsius);
 
-   procedure Report_MCU_Temperature (Temp : Fixed_Point_Celcius);
+   procedure Report_MCU_Temperature (Temp : Fixed_Point_Celsius);
 
    procedure Report_Heater_Power (Heater : Heater_Name; Power : Fixed_Point_PWM_Scale);
 
@@ -159,7 +159,7 @@ procedure Prunt_Board_2_Server is
                   Message.Thermistor_Curves (T) (I).Value :=
                     ADC_Value (R_Bot / (R_Bot + R_Top) * 28.0 * (2.0**12 - 1.0) * 128.0 / 2.0**3);
                   --  28 = MCU software oversampling count.
-                  Message.Thermistor_Curves (T) (I).Temp  := Fixed_Point_Celcius (Temp);
+                  Message.Thermistor_Curves (T) (I).Temp  := Fixed_Point_Celsius (Temp);
                end;
             end if;
          end loop;
@@ -206,39 +206,39 @@ procedure Prunt_Board_2_Server is
          when Prunt.Heaters.Disabled_Kind =>
             Message.Heater_Params :=
               (Kind                       => Disabled_Kind,
-               Check_Max_Cumulative_Error => Fixed_Point_Celcius (Params.Check_Max_Cumulative_Error),
+               Check_Max_Cumulative_Error => Fixed_Point_Celsius (Params.Check_Max_Cumulative_Error),
                Check_Gain_Time            => Fixed_Point_Seconds (Params.Check_Gain_Time),
-               Check_Minimum_Gain         => Fixed_Point_Celcius (Params.Check_Minimum_Gain),
-               Check_Hysteresis           => Fixed_Point_Celcius (Params.Check_Hysteresis));
+               Check_Minimum_Gain         => Fixed_Point_Celsius (Params.Check_Minimum_Gain),
+               Check_Hysteresis           => Fixed_Point_Celsius (Params.Check_Hysteresis));
          when Prunt.Heaters.PID_Kind =>
             Message.Heater_Params :=
               (Kind                       => PID_Kind,
-               Check_Max_Cumulative_Error => Fixed_Point_Celcius (Params.Check_Max_Cumulative_Error),
+               Check_Max_Cumulative_Error => Fixed_Point_Celsius (Params.Check_Max_Cumulative_Error),
                Check_Gain_Time            => Fixed_Point_Seconds (Params.Check_Gain_Time),
-               Check_Minimum_Gain         => Fixed_Point_Celcius (Params.Check_Minimum_Gain),
-               Check_Hysteresis           => Fixed_Point_Celcius (Params.Check_Hysteresis),
+               Check_Minimum_Gain         => Fixed_Point_Celsius (Params.Check_Minimum_Gain),
+               Check_Hysteresis           => Fixed_Point_Celsius (Params.Check_Hysteresis),
                Proportional_Scale         => Fixed_Point_PID_Parameter (Params.Proportional_Scale),
                Integral_Scale             => Fixed_Point_PID_Parameter (Params.Integral_Scale),
                Derivative_Scale           => Fixed_Point_PID_Parameter (Params.Derivative_Scale));
          when Prunt.Heaters.Bang_Bang_Kind =>
             Message.Heater_Params :=
               (Kind                       => Bang_Bang_Kind,
-               Check_Max_Cumulative_Error => Fixed_Point_Celcius (Params.Check_Max_Cumulative_Error),
+               Check_Max_Cumulative_Error => Fixed_Point_Celsius (Params.Check_Max_Cumulative_Error),
                Check_Gain_Time            => Fixed_Point_Seconds (Params.Check_Gain_Time),
-               Check_Minimum_Gain         => Fixed_Point_Celcius (Params.Check_Minimum_Gain),
-               Check_Hysteresis           => Fixed_Point_Celcius (Params.Check_Hysteresis),
-               Bang_Bang_Hysteresis       => Fixed_Point_Celcius (Params.Bang_Bang_Hysteresis));
+               Check_Minimum_Gain         => Fixed_Point_Celsius (Params.Check_Minimum_Gain),
+               Check_Hysteresis           => Fixed_Point_Celsius (Params.Check_Hysteresis),
+               Bang_Bang_Hysteresis       => Fixed_Point_Celsius (Params.Bang_Bang_Hysteresis));
          when Prunt.Heaters.PID_Autotune_Kind =>
             Message.Heater_Params :=
               (Kind                       => PID_Autotune_Kind,
-               Check_Max_Cumulative_Error => Fixed_Point_Celcius (Params.Check_Max_Cumulative_Error),
+               Check_Max_Cumulative_Error => Fixed_Point_Celsius (Params.Check_Max_Cumulative_Error),
                Check_Gain_Time            => Fixed_Point_Seconds (Params.Check_Gain_Time),
-               Check_Minimum_Gain         => Fixed_Point_Celcius (Params.Check_Minimum_Gain),
-               Check_Hysteresis           => Fixed_Point_Celcius (Params.Check_Hysteresis),
+               Check_Minimum_Gain         => Fixed_Point_Celsius (Params.Check_Minimum_Gain),
+               Check_Hysteresis           => Fixed_Point_Celsius (Params.Check_Hysteresis),
                Max_Cycles                 => Messages.PID_Autotune_Cycle_Count (Params.Max_Cycles),
                Proportional_Tuning_Factor => Fixed_Point_PID_Parameter (Params.Proportional_Tuning_Factor),
                Derivative_Tuning_Factor   => Fixed_Point_PID_Parameter (Params.Derivative_Tuning_Factor / hertz),
-               PID_Tuning_Temperature     => Fixed_Point_Celcius (Params.PID_Tuning_Temperature));
+               PID_Tuning_Temperature     => Fixed_Point_Celsius (Params.PID_Tuning_Temperature));
       end case;
 
       My_Communications.Runner.Send_Message (Message);
@@ -310,7 +310,7 @@ procedure Prunt_Board_2_Server is
       TMC_Read_Data   => (others => 0),
       Last_Index      => Step_Delta_List_Index'First,
       Fan_Targets     => (others => 0.0),
-      Heater_Targets  => (others => Fixed_Point_Celcius'First),
+      Heater_Targets  => (others => Fixed_Point_Celsius'First),
       Safe_Stop_After => False,
       Steps           => (others => (Steps => (others => 0), Dirs => (others => Forward))));
 
@@ -326,7 +326,7 @@ procedure Prunt_Board_2_Server is
             TMC_Read_Data   => (others => 0),
             Last_Index      => Step_Delta_List_Index'First,
             Fan_Targets     => (others => 0.0),
-            Heater_Targets  => (others => Fixed_Point_Celcius'First),
+            Heater_Targets  => (others => Fixed_Point_Celsius'First),
             Safe_Stop_After => False,
             Steps           => (others => (Steps => (others => 0), Dirs => (others => Forward))));
       end Send_Message_And_Reset;
@@ -355,11 +355,11 @@ procedure Prunt_Board_2_Server is
             TMC_Read_Data   => (others => 0),
             Last_Index      => Step_Delta_List_Index'First + Loop_Move_Multiplier - 1,
             Fan_Targets     => (others => 0.0),
-            Heater_Targets  => (others => Fixed_Point_Celcius'First),
+            Heater_Targets  => (others => Fixed_Point_Celsius'First),
             Safe_Stop_After => False,
             Steps           => (others => (Steps => (others => 0), Dirs => (others => Forward))));
 
-         Step_Delta_Message.Heater_Targets := (for H in Heater_Name => Fixed_Point_Celcius (Command.Heaters (H)));
+         Step_Delta_Message.Heater_Targets := (for H in Heater_Name => Fixed_Point_Celsius (Command.Heaters (H)));
          Step_Delta_Message.Fan_Targets    := (for F in Fan_Name => Fixed_Point_PWM_Scale (Command.Fans (F)));
 
          declare
@@ -408,7 +408,7 @@ procedure Prunt_Board_2_Server is
             Step_Delta_Message.Steps (Step_Delta_Message.Last_Index).Dirs :=
               (for I in Stepper_Name => (if Offset (I) >= 0.0 then Forward else Backward));
 
-            Step_Delta_Message.Heater_Targets := (for H in Heater_Name => Fixed_Point_Celcius (Command.Heaters (H)));
+            Step_Delta_Message.Heater_Targets := (for H in Heater_Name => Fixed_Point_Celsius (Command.Heaters (H)));
             Step_Delta_Message.Fan_Targets    := (for F in Fan_Name => Fixed_Point_PWM_Scale (Command.Fans (F)));
 
             if Command.Safe_Stop_After then
@@ -533,12 +533,12 @@ procedure Prunt_Board_2_Server is
       My_Controller.Report_External_Error (Occurrence);
    end Report_Error;
 
-   procedure Report_Temperature (Thermistor : Messages.Thermistor_Name; Temp : Fixed_Point_Celcius) is
+   procedure Report_Temperature (Thermistor : Messages.Thermistor_Name; Temp : Fixed_Point_Celsius) is
    begin
       My_Controller.Report_Temperature (Thermistor, Temperature (Temp));
    end Report_Temperature;
 
-   procedure Report_MCU_Temperature (Temp : Fixed_Point_Celcius) is
+   procedure Report_MCU_Temperature (Temp : Fixed_Point_Celsius) is
    begin
       My_Controller.Report_Temperature (Main_MCU, Temperature (Temp));
    end Report_MCU_Temperature;

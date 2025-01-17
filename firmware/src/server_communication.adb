@@ -270,7 +270,7 @@ package body Server_Communication is
 
                         for Heater in Heater_Name loop
                            Heaters.Set_Setpoint
-                             (Heater, Dimensionless (RX_Message.Content.Heater_Targets (Heater)) * celcius);
+                             (Heater, Dimensionless (RX_Message.Content.Heater_Targets (Heater)) * celsius);
                         end loop;
                         for Fan in Fan_Name loop
                            Fans.Set_PWM (Fan, RX_Message.Content.Fan_Targets (Fan));
@@ -354,17 +354,17 @@ package body Server_Communication is
                declare
                   Temp : Temperature := Thermistors.Last_Reported_Temperature (Thermistor);
                begin
-                  if Temp < Dimensionless (Fixed_Point_Celcius'First + 10.0) * celcius then
-                     TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celcius'First;
-                  elsif Temp > Dimensionless (Fixed_Point_Celcius'Last - 10.0) * celcius then
-                     TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celcius'Last;
+                  if Temp < Dimensionless (Fixed_Point_Celsius'First + 10.0) * celsius then
+                     TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celsius'First;
+                  elsif Temp > Dimensionless (Fixed_Point_Celsius'Last - 10.0) * celsius then
+                     TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celsius'Last;
                   else
-                     TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celcius (Temp / celcius);
+                     TX_Message.Content.Temperatures (Thermistor) := Fixed_Point_Celsius (Temp / celsius);
                   end if;
                end;
             end loop;
 
-            TX_Message.Content.MCU_Temperature := Fixed_Point_Celcius (MCU_Temperature.Last_Temperature);
+            TX_Message.Content.MCU_Temperature := Fixed_Point_Celsius (MCU_Temperature.Last_Temperature);
 
             for Switch in Input_Switch_Name loop
                TX_Message.Content.Switches (Switch) := Input_Switches.Get_State (Switch);

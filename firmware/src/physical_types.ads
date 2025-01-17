@@ -11,7 +11,7 @@ package Physical_Types is
      Dimension_System =>
       ((Unit_Name => Millimeter, Unit_Symbol => "mm", Dim_Symbol => "Length"),
        (Unit_Name => Second, Unit_Symbol => "s", Dim_Symbol => "Time"),
-       (Unit_Name => Celcius, Unit_Symbol => "°C", Dim_Symbol => "Temperature"),
+       (Unit_Name => Celsius, Unit_Symbol => "°C", Dim_Symbol => "Temperature"),
        (Unit_Name => Volt, Unit_Symbol => "V", Dim_Symbol => "Voltage"),
        (Unit_Name => Amp, Unit_Symbol => "A", Dim_Symbol => "Current"),
        (Unit_Name => Gram, Unit_Symbol => "g", Dim_Symbol => "Mass"));
@@ -23,7 +23,7 @@ package Physical_Types is
        Dimension => (Symbol => "s", Second => 1, others => 0);
 
    subtype Temperature is Dimensioned_Float with
-       Dimension => (Symbol => "°C", Celcius => 1, others => 0);
+       Dimension => (Symbol => "°C", Celsius => 1, others => 0);
 
    subtype Angle is Dimensioned_Float with
        Dimension => (Symbol => "rad", others => 0);
@@ -59,7 +59,7 @@ package Physical_Types is
    pragma Warnings (Off, "assumed to be");
    mm      : constant Length      := 1.0;
    s       : constant Time        := 1.0;
-   celcius : constant Temperature := 1.0;
+   celsius : constant Temperature := 1.0;
    radian  : constant Angle       := 1.0;
    volt    : constant Voltage     := 1.0;
    amp     : constant Current     := 1.0;
@@ -105,27 +105,27 @@ package Physical_Types is
        Dimension => (Symbol => "W/mm²", Volt => 1, Amp => 1, Millimeter => -2, others => 0);
 
    subtype Heat_Transfer_Coefficient is Dimensioned_Float with
-       Dimension => (Symbol => "W/(mm²°C)", Volt => 1, Amp => 1, Millimeter => -2, Celcius => -1, others => 0);
+       Dimension => (Symbol => "W/(mm²°C)", Volt => 1, Amp => 1, Millimeter => -2, Celsius => -1, others => 0);
 
    subtype Thermal_Conductance is Dimensioned_Float with
-       Dimension => (Symbol => "W/°C", Volt => 1, Amp => 1, Celcius => -1, others => 0);
+       Dimension => (Symbol => "W/°C", Volt => 1, Amp => 1, Celsius => -1, others => 0);
 
    subtype Heat_Capacity is Dimensioned_Float with
-       Dimension => (Symbol => "J/°C", Volt => 1, Amp => 1, Second => 1, Celcius => -1, others => 0);
+       Dimension => (Symbol => "J/°C", Volt => 1, Amp => 1, Second => 1, Celsius => -1, others => 0);
 
    subtype Specific_Heat_Capacity is Dimensioned_Float with
-       Dimension => (Symbol => "J/(g°C)", Volt => 1, Amp => 1, Second => 1, Gram => -1, Celcius => -1, others => 0);
+       Dimension => (Symbol => "J/(g°C)", Volt => 1, Amp => 1, Second => 1, Gram => -1, Celsius => -1, others => 0);
 
    subtype Inverse_Temperature is Dimensioned_Float with
-       Dimension => (Symbol => "°C⁻¹", Celcius => -1, others => 0);
+       Dimension => (Symbol => "°C⁻¹", Celsius => -1, others => 0);
    subtype Time_Over_Temperature is Dimensioned_Float with
-       Dimension => (Symbol => "s/°C", Second => 1, Celcius => -1, others => 0);
+       Dimension => (Symbol => "s/°C", Second => 1, Celsius => -1, others => 0);
    subtype Frequency_Over_Temperature is Dimensioned_Float with
-       Dimension => (Symbol => "Hz/°C", Second => -1, Celcius => -1, others => 0);
+       Dimension => (Symbol => "Hz/°C", Second => -1, Celsius => -1, others => 0);
    subtype Temperature_Over_Time is Dimensioned_Float with
-       Dimension => (Symbol => "°C/s", Second => -1, Celcius => 1, others => 0);
+       Dimension => (Symbol => "°C/s", Second => -1, Celsius => 1, others => 0);
    subtype Lengthwise_Heat_Capacity is Dimensioned_Float with
        Dimension =>
-        (Symbol => "J/(mm°C)", Volt => 1, Amp => 1, Second => 1, Celcius => -1, Millimeter => -1, others => 0);
+        (Symbol => "J/(mm°C)", Volt => 1, Amp => 1, Second => 1, Celsius => -1, Millimeter => -1, others => 0);
 
 end Physical_Types;

@@ -111,7 +111,7 @@ package body Thermistors is
          for Thermistor in Thermistor_Name loop
             for I in Thermistor_Curve_Index loop
                Curves (Thermistor) (I) :=
-                 (Temp  => Dimensionless (Thermistor_Curves (Thermistor) (I).Temp) * celcius,
+                 (Temp  => Dimensionless (Thermistor_Curves (Thermistor) (I).Temp) * celsius,
                   Value => Thermistor_Curves (Thermistor) (I).Value);
             end loop;
          end loop;

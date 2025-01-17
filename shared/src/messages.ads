@@ -128,13 +128,13 @@ package Messages is
    type Heater_Kind is (Disabled_Kind, PID_Kind, Bang_Bang_Kind, PID_Autotune_Kind) with
      Size => 8;
 
-   type Fixed_Point_Celcius is delta 2.0**(-13) range -1_000.0 .. 1_000.0 with
+   type Fixed_Point_Celsius is delta 2.0**(-13) range -1_000.0 .. 1_000.0 with
      Size => 24, Small => 2.0**(-13);
 
    type Fixed_Point_Seconds is delta 2.0**(-5) range 0.0 .. 2_000.0 with
      Size => 16, Small => 2.0**(-5);
 
-   type Heater_Target_List is array (Heater_Name) of Fixed_Point_Celcius with
+   type Heater_Target_List is array (Heater_Name) of Fixed_Point_Celsius with
      Size => 48, Component_Size => 24, Scalar_Storage_Order => System.Low_Order_First;
 
    type Fixed_Point_PID_Parameter is delta 2.0**(-18) range 0.0 .. 8_000.0 with
@@ -144,22 +144,22 @@ package Messages is
      Size => 16;
 
    type Heater_Parameters (Kind : Heater_Kind := Disabled_Kind) is record
-      Check_Max_Cumulative_Error : Fixed_Point_Celcius;
+      Check_Max_Cumulative_Error : Fixed_Point_Celsius;
       Check_Gain_Time            : Fixed_Point_Seconds;
-      Check_Minimum_Gain         : Fixed_Point_Celcius;
-      Check_Hysteresis           : Fixed_Point_Celcius;
+      Check_Minimum_Gain         : Fixed_Point_Celsius;
+      Check_Hysteresis           : Fixed_Point_Celsius;
       case Kind is
          when Disabled_Kind =>
             null;
          when Bang_Bang_Kind =>
-            Bang_Bang_Hysteresis : Fixed_Point_Celcius;
+            Bang_Bang_Hysteresis : Fixed_Point_Celsius;
          when PID_Kind =>
             Proportional_Scale : Fixed_Point_PID_Parameter;
             Integral_Scale     : Fixed_Point_PID_Parameter;
             Derivative_Scale   : Fixed_Point_PID_Parameter;
          when PID_Autotune_Kind =>
             Max_Cycles                 : PID_Autotune_Cycle_Count;
-            PID_Tuning_Temperature     : Fixed_Point_Celcius;
+            PID_Tuning_Temperature     : Fixed_Point_Celsius;
             Proportional_Tuning_Factor : Fixed_Point_PID_Parameter;
             Derivative_Tuning_Factor   : Fixed_Point_PID_Parameter;
       end case;
@@ -183,7 +183,7 @@ package Messages is
    end record;
 
    type Thermistor_Point is record
-      Temp  : Fixed_Point_Celcius;
+      Temp  : Fixed_Point_Celsius;
       Value : ADC_Value;
    end record with
      Scalar_Storage_Order => System.Low_Order_First, Bit_Order => System.Low_Order_First, Size => 48;
@@ -201,7 +201,7 @@ package Messages is
    type Thermistor_Curves_Array is array (Thermistor_Name) of Thermistor_Curve with
      Size => 48 * 512 * 4, Component_Size => 48 * 512, Scalar_Storage_Order => System.Low_Order_First;
 
-   type Reported_Temperatures is array (Thermistor_Name) of Fixed_Point_Celcius with
+   type Reported_Temperatures is array (Thermistor_Name) of Fixed_Point_Celsius with
      Size => 24 * 4, Component_Size => 24, Scalar_Storage_Order => System.Low_Order_First;
 
    type Reported_Heater_PWMs is array (Heater_Name) of Fixed_Point_PWM_Scale with
@@ -386,7 +386,7 @@ package Messages is
             --  Number of bytes sent in complete message from the server.
          when others =>
             Temperatures    : Reported_Temperatures;
-            MCU_Temperature : Fixed_Point_Celcius;
+            MCU_Temperature : Fixed_Point_Celsius;
             Heaters         : Reported_Heater_PWMs;
             Switches        : Reported_Switch_States;
             Tachs           : Reported_Tach_Counters;
