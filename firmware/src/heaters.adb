@@ -73,7 +73,7 @@ package body Heaters is
       --  Not required but may detect an issue elsewhere.
 
       Heater_Setpoint_Holders (Heater).Set (Setpoint);
-      if Setpoint <= 0.0 * celcius then
+      if Setpoint <= 0.0 * celsius then
          Set_PWM (Heater, 0.0);
       end if;
    end Set_Setpoint;
@@ -81,7 +81,7 @@ package body Heaters is
    procedure Set_PWM (Heater : Heater_Name; Scale : PWM_Scale; Override_Forced_Zero : Boolean := False) is
       Setpoint : constant Temperature := Heater_Setpoint_Holders (Heater).Get;
    begin
-      if Setpoint <= 0.0 * celcius and not Override_Forced_Zero then
+      if Setpoint <= 0.0 * celsius and not Override_Forced_Zero then
          Set_Compare_Value (Heater_Timers (Heater).all, Heater_Timer_Channels (Heater), UInt16 (0));
       else
          Set_Compare_Value (Heater_Timers (Heater).all, Heater_Timer_Channels (Heater), UInt16 (Scale * 50_001.0));
@@ -195,11 +195,11 @@ package body Heaters is
          Ctx.Updated_Since_Last_Reset := False;
 
          --  Algorithm from Klipper.
-         if Current_Temp >= Setpoint - Temperature (Params.Check_Hysteresis) or Setpoint <= 0.0 * celcius then
+         if Current_Temp >= Setpoint - Temperature (Params.Check_Hysteresis) or Setpoint <= 0.0 * celsius then
             Ctx.Approaching_Setpoint := False;
             Ctx.Starting_Approach    := False;
             if Current_Temp <= Setpoint + Temperature (Params.Check_Hysteresis) then
-               Ctx.Cumulative_Error := 0.0 * celcius;
+               Ctx.Cumulative_Error := 0.0 * celsius;
             end if;
             Ctx.Last_Setpoint := Setpoint;
          else
@@ -217,7 +217,7 @@ package body Heaters is
                end if;
             elsif Current_Temp >= Ctx.Goal_Temp then
                Ctx.Starting_Approach := False;
-               Ctx.Cumulative_Error  := 0.0 * celcius;
+               Ctx.Cumulative_Error  := 0.0 * celsius;
                Ctx.Goal_Temp         := Current_Temp + Temperature (Params.Check_Minimum_Gain);
                Ctx.Goal_Time         := Clock + To_Time_Span (Duration (Params.Check_Gain_Time));
             elsif Clock >= Ctx.Goal_Time then
@@ -255,7 +255,7 @@ package body Heaters is
       Integral_Scale     : PID_Scale;
       Derivative_Scale   : PID_Scale;
       Output_Sum         : Dimensionless := Get_PWM (Heater);
-      Last_Temperature   : Temperature   := -1_000_000.0 * celcius;
+      Last_Temperature   : Temperature   := -1_000_000.0 * celsius;
 
       Params : Heater_Parameters;
 
@@ -273,7 +273,7 @@ package body Heaters is
 
          Heater_Update_Holders (Heater).Wait_Next_Reading (Current_Temperature);
 
-         if Last_Temperature = -1_000_000.0 * celcius then
+         if Last_Temperature = -1_000_000.0 * celsius then
             --  Heater has only just been switched to PID, or something is broken.
             Last_Temperature := Current_Temperature;
          end if;
@@ -323,12 +323,12 @@ package body Heaters is
       T_Low              : Time_Span          := Seconds (0);
       Cycles             : Natural            := 0;
       Heating            : Boolean            := True;
-      Max_T              : Temperature        := 0.0 * celcius;
-      Min_T              : Temperature        := 10_000.0 * celcius;
+      Max_T              : Temperature        := 0.0 * celsius;
+      Min_T              : Temperature        := 10_000.0 * celsius;
       Max_Cycles         : Natural;
-      Proportional_Scale : PID_Scale          := 0.0 / celcius;
-      Integral_Scale     : PID_Scale          := 0.0 / celcius;
-      Derivative_Scale   : PID_Scale          := 0.0 / celcius;
+      Proportional_Scale : PID_Scale          := 0.0 / celsius;
+      Integral_Scale     : PID_Scale          := 0.0 / celsius;
+      Derivative_Scale   : PID_Scale          := 0.0 / celsius;
       Setpoint           : Temperature;
 
       Params : Heater_Parameters;
@@ -345,7 +345,7 @@ package body Heaters is
       Max_Cycles := Natural (Params.Max_Cycles);
       Setpoint   := Temperature (Params.PID_Tuning_Temperature);
 
-      Heater_Setpoint_Holders (Heater).Set (0.0 * celcius);
+      Heater_Setpoint_Holders (Heater).Set (0.0 * celsius);
       Set_PWM (Heater, Bias, Override_Forced_Zero => True);
 
       loop
@@ -358,7 +358,7 @@ package body Heaters is
          Heater_Update_Holders (Heater).Wait_Next_Reading (Current_Temperature);
          Loop_Time := Clock;
 
-         if (Current_Temperature > Setpoint + 30.0 * celcius) then
+         if (Current_Temperature > Setpoint + 30.0 * celsius) then
             Make_Safe;
             raise Heater_Check_Failure with "Heater overshot by over 30 C during PID autotune.";
          elsif Loop_Time - T1 > Minutes (20) and Loop_Time - T2 > Minutes (20) then
@@ -439,7 +439,7 @@ package body Heaters is
             Set_PWM (Heater, 0.0);
             Server_Communication.Transmit_String_Line ("PID autotune done.");
 
-            Heater_Setpoint_Holders (Heater).Set (0.0 * celcius);
+            Heater_Setpoint_Holders (Heater).Set (0.0 * celsius);
             Heater_Heater_Params (Heater).Set
               ((Kind                       => Disabled_Kind,
                 Check_Max_Cumulative_Error => 0.0,

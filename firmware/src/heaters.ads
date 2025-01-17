@@ -59,7 +59,7 @@ private
       procedure Set (Setpoint : Temperature);
       function Get return Temperature;
    private
-      Data : Temperature := 0.0 * celcius;
+      Data : Temperature := 0.0 * celsius;
    end Setpoint_Holder;
 
    Heater_Setpoint_Holders : array (Heater_Name) of Setpoint_Holder;
@@ -92,9 +92,9 @@ private
            (Updated_Since_Last_Reset => False,
             Approaching_Setpoint     => False,
             Starting_Approach        => False,
-            Cumulative_Error         => 0.0 * celcius,
-            Last_Setpoint            => 0.0 * celcius,
-            Goal_Temp                => 0.0 * celcius,
+            Cumulative_Error         => 0.0 * celsius,
+            Last_Setpoint            => 0.0 * celsius,
+            Goal_Temp                => 0.0 * celsius,
             Goal_Time                => Clock));
    end Safety_Checker;
 

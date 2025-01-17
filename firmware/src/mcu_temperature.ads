@@ -18,8 +18,8 @@ private
      Import, Address => System'To_Address (16#1FFF_75A8#);
    TS_CAL2_ADC         : constant ADC_16 with
      Import, Address => System'To_Address (16#1FFF_75CA#);
-   TS_CAL1_Temperature : constant Temperature := 30.0 * celcius;
-   TS_CAL2_Temperature : constant Temperature := 130.0 * celcius;
+   TS_CAL1_Temperature : constant Temperature := 30.0 * celsius;
+   TS_CAL2_Temperature : constant Temperature := 130.0 * celsius;
    TS_CAL_Voltage      : constant Voltage     := 3.0 * volt;
    Board_Voltage       : constant Voltage     := 3.3 * volt;
 

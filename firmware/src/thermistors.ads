@@ -40,7 +40,7 @@ package Thermistors is
 
 private
 
-   Bad_Reading_Indicator : constant Temperature := 1_000_000_000.0 * celcius;
+   Bad_Reading_Indicator : constant Temperature := 1_000_000_000.0 * celsius;
 
    type ADC_16 is mod 2**16 with
      Size => 16;
