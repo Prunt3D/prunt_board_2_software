@@ -2,6 +2,8 @@ with Messages;               use Messages;
 with Hardware_Configuration; use Hardware_Configuration;
 with Ada.Real_Time;          use Ada.Real_Time;
 with Physical_Types;         use Physical_Types;
+with Ada.Numerics.Generic_Real_Arrays;
+with Ada.Numerics.Generic_Elementary_Functions;
 with Init_Checkers;
 
 package Heaters is
@@ -26,6 +28,9 @@ package Heaters is
    Heater_Check_Failure : exception;
 
 private
+
+   package Dimensionless_Elementary_Functions is new Ada.Numerics.Generic_Elementary_Functions (Dimensionless);
+   package Dimensionless_Real_Arrays is new Ada.Numerics.Generic_Real_Arrays (Dimensionless);
 
    Init_Checker : Init_Checkers.Init_Checker;
 
@@ -106,6 +111,7 @@ private
    --  procedure MPC_Loop (Heater : Heater_Name);
    --  procedure MPC_Autotune_Loop (Heater : Heater_Name);
    procedure PID_Loop (Heater : Heater_Name);
+   procedure PIDNN_Loop (Heater : Heater_Name);
    procedure PID_Autotune_Loop (Heater : Heater_Name);
    procedure Bang_Bang_Loop (Heater : Heater_Name);
    procedure Disabled_Loop (Heater : Heater_Name);

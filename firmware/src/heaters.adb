@@ -177,7 +177,7 @@ package body Heaters is
             when Disabled_Kind =>
                Disabled_Loop (Heater);
             when PID_Kind =>
-               PID_Loop (Heater);
+               PIDNN_Loop (Heater);
             when PID_Autotune_Kind =>
                PID_Autotune_Loop (Heater);
             when Bang_Bang_Kind =>
@@ -480,6 +480,195 @@ package body Heaters is
          Safety_Checker.Report_Updated (Heater, Current_Temperature);
       end loop;
    end Bang_Bang_Loop;
+
+   procedure PIDNN_Loop (Heater : Heater_Name) is
+      use Dimensionless_Real_Arrays;
+
+      type Mode_Kind is (Setpoint_Change, Frozen_Weights, Training_Weights);
+
+      function Tanh (X : Dimensionless) return Dimensionless renames Dimensionless_Elementary_Functions.Tanh;
+      --  We could likely get away with a 1.0 - 2.0 / (e**(2.0 * X) + 1.0) instead of the above slower but correct
+      --  implementation, but this code is called infrequently enough that it should not matter.
+
+      function Elementwise_Sqrt (M : Real_Matrix) return Real_Matrix is
+      begin
+         return Result : Real_Matrix := M do
+            for I in Result'Range (1) loop
+               for J in Result'Range (2) loop
+                  Result (I, J) := Dimensionless_Elementary_Functions.Sqrt (@);
+               end loop;
+            end loop;
+         end return;
+      end Elementwise_Sqrt;
+
+      function Elementwise_Divide (A, B : Real_Matrix) return Real_Matrix is
+      begin
+         if A'Length (1) /= B'Length (1) or A'Length (2) /= B'Length (2) then
+            raise Constraint_Error with "Matrices must have same dimensions.";
+         end if;
+
+         return Result : Real_Matrix := A do
+            for I in Result'Range (1) loop
+               for J in Result'Range (2) loop
+                  Result (I, J) := A (I, J) / B (I, J);
+               end loop;
+            end loop;
+         end return;
+      end Elementwise_Divide;
+
+      subtype Matrix_1_1 is Real_Matrix (1 .. 1, 1 .. 1);
+      subtype Matrix_1_3 is Real_Matrix (1 .. 1, 1 .. 3);
+      subtype Matrix_3_1 is Real_Matrix (1 .. 3, 1 .. 1);
+      subtype Matrix_3_3 is Real_Matrix (1 .. 3, 1 .. 3);
+
+      Proportional_Scale : Dimensionless;
+      Integral_Scale     : Dimensionless;
+      Derivative_Scale   : Dimensionless;
+
+      Input_To_L1_Weights  : constant Matrix_3_1 := (others => (1 => 1.0 / 3.0));
+      L1_To_L2_Weights     : Matrix_3_3          := (others => (others => 1.0));
+      L2_To_Output_Weights : constant Matrix_1_3 := (1 => (others => 1.0));
+
+      First_Moment_Decay_Rate        : constant Dimensionless := 0.9;
+      Second_Moment_Decay_Rate       : constant Dimensionless := 0.999;
+      Learning_Rate                  : constant Dimensionless := 0.000_05;
+      Stable_Temperature             : constant Temperature   := 0.1 * celsius;
+      Stable_Count_Before_Freeze     : constant Natural       := 40;
+      Unstable_Count_Before_Training : constant Natural       := 4;
+
+      First_Moment  : Matrix_3_3 := (others => (others => 0.0));
+      Second_Moment : Matrix_3_3 := (others => (others => 0.0));
+
+      Last_L2_Input  : Matrix_3_1 := (others => (1 => 0.0));
+      Last_L2_Output : Matrix_3_1 := (others => (1 => 0.0));
+
+      Last_Output      : Dimensionless := Get_PWM (Heater);
+      Last_Temperature : Temperature   := -1_000_000.0 * celsius;
+
+      Params : Heater_Parameters;
+
+      Current_Temperature : Temperature;
+
+      Stable_Count   : Natural     := 0;
+      Unstable_Count : Natural     := 0;
+      Current_Mode   : Mode_Kind   := Setpoint_Change;
+      Last_Setpoint  : Temperature := Heater_Setpoint_Holders (Heater).Get;
+   begin
+      loop
+         Params := Heater_Heater_Params (Heater).Get;
+         if Params.Kind /= PID_Kind then
+            return;
+         end if;
+
+         Proportional_Scale := Dimensionless (Params.Proportional_Scale);
+         Integral_Scale     := Dimensionless (Params.Integral_Scale) * (hertz / Thermistors.Loop_Frequency);
+         Derivative_Scale   := Dimensionless (Params.Derivative_Scale) / (hertz / Thermistors.Loop_Frequency);
+
+         Heater_Update_Holders (Heater).Wait_Next_Reading (Current_Temperature);
+
+         if Last_Temperature = -1_000_000.0 * celsius then
+            --  Heater has only just been switched to PIDNN, or something is broken.
+            Last_Temperature := Current_Temperature;
+         end if;
+
+         declare
+            Setpoint : constant Temperature := Heater_Setpoint_Holders (Heater).Get;
+
+            --  TODO: What if we also had the delta-t as an input instead of just the error?
+            L1_Input  : constant Matrix_3_1 :=
+              (Setpoint - Current_Temperature) / celsius * Input_To_L1_Weights;
+            --  L1_Output : constant Matrix_3_1 := (for I in 1 .. 3 => (1 => Tanh (L1_Input (I, 1))));
+            --  TODO: Report GNAT bug caused by above line.
+            --  L1_Output : constant Matrix_3_1 :=
+            --    (1 => (1 => Tanh (L1_Input (1, 1))),
+            --     2 => (1 => Tanh (L1_Input (2, 1))),
+            --     3 => (1 => Tanh (L1_Input (3, 1))));
+            L1_Output : constant Matrix_3_1 := L1_Input;
+            L2_Input  : constant Matrix_3_1 := L1_To_L2_Weights * L1_Output;
+            L2_Output : constant Matrix_3_1 :=
+              (1 => (1 => Proportional_Scale * L2_Input (1, 1)),
+               2 => (1 => Last_L2_Output (2, 1) + Integral_Scale * L2_Input (2, 1)),
+               3 => (1 => Derivative_Scale * (L2_Input (3, 1) - Last_L2_Input (3, 1))));
+            L3_Input  : constant Matrix_1_1 := L2_To_Output_Weights * L2_Output;
+            L3_Output : constant PWM_Scale  :=
+              Dimensionless'Min (Dimensionless'Max (L3_Input (1, 1), PWM_Scale'First), PWM_Scale'Last);
+         begin
+            Set_PWM (Heater, L3_Output);
+
+            if Setpoint /= Last_Setpoint or abs (Setpoint - Current_Temperature) > 2.0 * celsius then
+               Current_Mode := Setpoint_Change;
+            end if;
+
+            case Current_Mode is
+               when Setpoint_Change =>
+                  Stable_Count   := 0;
+                  Unstable_Count := 0;
+
+                  if abs (Setpoint - Current_Temperature) < Stable_Temperature then
+                     Current_Mode := Frozen_Weights;
+                  end if;
+               when Frozen_Weights =>
+                  if abs (Setpoint - Current_Temperature) > Stable_Temperature then
+                     Unstable_Count := @ + 1;
+                     if Unstable_Count > Unstable_Count_Before_Training then
+                        Current_Mode   := Training_Weights;
+                        Stable_Count   := 0;
+                        Unstable_Count := 0;
+                     end if;
+                  elsif Unstable_Count > 0 then
+                     Unstable_Count := @ - 1;
+                  end if;
+               when Training_Weights =>
+                  declare
+                     D        : constant Dimensionless :=
+                       ((Setpoint - Current_Temperature) / celsius) *
+                       Tanh
+                         ((Current_Temperature - Last_Temperature) / celsius *
+                          (if L3_Output > Last_Output then 1.0 else -1.0)) *
+                       (if L3_Output = PWM_Scale'First or L3_Output = PWM_Scale'Last then 0.0 else 1.0);
+                     Gradient : constant Matrix_3_3    :=
+                       Matrix_3_1'
+                         (1 => (1 => L2_To_Output_Weights (1, 1) * D * Proportional_Scale),
+                          2 => (1 => L2_To_Output_Weights (1, 2) * D * Integral_Scale),
+                          3 => (1 => L2_To_Output_Weights (1, 3) * D * Derivative_Scale)) *
+                       Transpose (L1_Output);
+                  begin
+                     First_Moment     :=
+                       First_Moment_Decay_Rate * First_Moment + (1.0 - First_Moment_Decay_Rate) * Gradient;
+                     Second_Moment    :=
+                       Second_Moment_Decay_Rate * Second_Moment +
+                       (1.0 - Second_Moment_Decay_Rate) * (Gradient * Gradient);
+                     L1_To_L2_Weights :=
+                       L1_To_L2_Weights -
+                       Elementwise_Divide
+                         ((First_Moment / (1.0 - First_Moment_Decay_Rate) * Learning_Rate),
+                          Elementwise_Sqrt
+                            (Second_Moment / (1.0 - Second_Moment_Decay_Rate) +
+                             Matrix_3_3'(others => (others => 1.0E-8))));
+                  end;
+
+                  if abs (Setpoint - Current_Temperature) < Stable_Temperature then
+                     Stable_Count := @ + 1;
+                     if Stable_Count > Stable_Count_Before_Freeze then
+                        Current_Mode   := Frozen_Weights;
+                        Stable_Count   := 0;
+                        Unstable_Count := 0;
+                     end if;
+                  else
+                     Stable_Count := 0;
+                  end if;
+            end case;
+
+            Last_L2_Input    := L2_Input;
+            Last_L2_Output   := L2_Output;
+            Last_Output      := L3_Output;
+            Last_Setpoint    := Setpoint;
+            Last_Temperature := Current_Temperature;
+
+            Safety_Checker.Report_Updated (Heater, Current_Temperature);
+         end;
+      end loop;
+   end PIDNN_Loop;
 
    procedure Disabled_Loop (Heater : Heater_Name) is
       Params : Heater_Parameters;
