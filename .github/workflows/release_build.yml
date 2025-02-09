@@ -26,12 +26,12 @@ jobs:
         alr exec -- arm-eabi-objcopy -O binary bin/prunt_board_2_firmware.elf bin/prunt_board_2_firmware.bin &&
         ./firmware_patcher/bin/firmware_patcher bin/prunt_board_2_firmware.bin ../kalico/out/klipper.bin bin/prunt_board_2_firmware_with_crc.bin
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: prunt_board_2_firmware_with_crc.bin
         path: firmware/bin/prunt_board_2_firmware_with_crc.bin
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: prunt_board_2_firmware.elf
         path: firmware/bin/prunt_board_2_firmware.elf
@@ -46,7 +46,7 @@ jobs:
 
     - uses: alire-project/setup-alire@b607671067a8ca5d7b7f4a12dadb4dc009cd2cc7
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: prunt_board_2_firmware_with_crc.bin
         path: server/embedded_resources
@@ -61,12 +61,12 @@ jobs:
         alr build --development &&
         mv bin/prunt_board_2_server bin/prunt_board_2_server_linux_x64_debug
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: prunt_board_2_server_linux_x64_debug
         path: server/bin/prunt_board_2_server_linux_x64_debug
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: prunt_board_2_server_linux_x64_release
         path: server/bin/prunt_board_2_server_linux_x64_release
@@ -79,7 +79,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: prunt_board_2_firmware_with_crc.bin
         path: server/embedded_resources
@@ -93,12 +93,12 @@ jobs:
         alr build --development &&
         mv bin/prunt_board_2_server bin/prunt_board_2_server_linux_aarch64_debug
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: prunt_board_2_server_linux_aarch64_debug
         path: server/bin/prunt_board_2_server_linux_aarch64_debug
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: prunt_board_2_server_linux_aarch64_release
         path: server/bin/prunt_board_2_server_linux_aarch64_release
@@ -115,7 +115,7 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
 
     - uses: softprops/action-gh-release@01570a1f39cb168c169c802c3bceb9e93fb10974
       with:
