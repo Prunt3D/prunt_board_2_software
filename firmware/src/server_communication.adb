@@ -190,12 +190,14 @@ package body Server_Communication is
             Update_CRC (Comms_CRC_Unit, CRC_Input, CRC_Output);
 
             if CRC32 (CRC_Output xor 16#FFFF_FFFF#) /= RX_Message.Checksum then
-               Transmit_String_Line
-                 ("Bad CRC, expected " & CRC_Output'Image & " but got " & RX_Message.Checksum'Image);
+               null;
+               --  Transmit_String_Line
+               --    ("Bad CRC, expected " & CRC_Output'Image & " but got " & RX_Message.Checksum'Image);
                --  This will cause the last message to be resent, which will cause the server to resend its last
                --  message.
             elsif RX_Message.Content.Index = Last_Message_Index then
-               Transmit_String_Line ("Got index " & RX_Message.Content.Index'Image & ". Resending last.");
+               null;
+               --  Transmit_String_Line ("Got index " & RX_Message.Content.Index'Image & ". Resending last.");
                --  This will cause the last message to be resent. The server sending the same message twice indicates
                --  that the checksum did not match.
             elsif RX_Message.Content.Index /= Last_Message_Index + 1 then

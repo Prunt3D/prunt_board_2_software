@@ -122,8 +122,9 @@ package body Steppers is
             declare
                Junk : UInt9 := TMC_UART_Internal.RDR.RDR;
             begin
-               Server_Communication.Transmit_String_Line
-                 ("Unexpected data on TMC UART before read (" & Junk'Image & ").");
+               --  Server_Communication.Transmit_String_Line
+               --    ("Unexpected data on TMC UART before read (" & Junk'Image & ").");
+               null;
             end;
          end loop;
 
@@ -196,8 +197,9 @@ package body Steppers is
             declare
                Junk : UInt9 := TMC_UART_Internal.RDR.RDR;
             begin
-               Server_Communication.Transmit_String_Line
-                 ("Unexpected data on TMC UART before write (" & Junk'Image & ").");
+               --  Server_Communication.Transmit_String_Line
+               --    ("Unexpected data on TMC UART before write (" & Junk'Image & ").");
+               null;
             end;
          end loop;
 
