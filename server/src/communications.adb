@@ -381,9 +381,9 @@ package body Communications is
 
                   Log ("Firmware version " & Received_Message.Content.Version'Image & ".");
 
-                  exit when Received_Message.Content.Version = 3;
+                  exit when Received_Message.Content.Version = 4;
 
-                  Log ("Firmware version 3 required.");
+                  Log ("Firmware version 4 required.");
 
                   if Already_Tried_Update then
                      raise Constraint_Error with "Board firmware update failed.";

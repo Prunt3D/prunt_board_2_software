@@ -127,7 +127,7 @@ package body Server_Communication is
 
       Set_TX_Message_Kind (Hello_Kind);
       TX_Message.Content.Index                 := Last_Message_Index;
-      TX_Message.Content.Version               := 3;
+      TX_Message.Content.Version               := 4;
       TX_Message.Content.Client_Message_Length := Message_From_Client'Value_Size / 4;
       TX_Message.Content.Server_Message_Length := Message_From_Server'Value_Size / 8;
       TX_Message.Content.ID                    :=
