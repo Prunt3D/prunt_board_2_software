@@ -16,6 +16,8 @@ package Step_Generator is
    procedure Enqueue_Stop_Loop;
    function Check_If_Idle return Boolean;
    procedure Force_Start;
+   function Loop_Enqueued return Boolean;
+   function Enqueue_Would_Block (Number_Of_Steps : Step_Delta_List_Index) return Boolean;
 
    Empty_Buffer_Error : exception;
 

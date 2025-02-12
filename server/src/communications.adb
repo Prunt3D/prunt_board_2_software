@@ -277,7 +277,8 @@ package body Communications is
                end if;
 
                if Message.Content.Index /= Message_Index'First + 1 then
-                  Log ("MCU indicated CRC error. Resending message.");
+                  --  Log ("MCU indicated CRC error. Resending message.");
+                  --  Don't log this as we also use it as part of homing moves.
                   GNAT.Serial_Communications.Write (Port, Message_Bytes);
                   --  We do not do resends for the first message as we can have multiple messages stuck in the buffer.
                   --  Resending here in that case would mean that every future message would end up with multiple

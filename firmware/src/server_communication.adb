@@ -77,9 +77,10 @@ package body Server_Communication is
          return True;
       end Are_All_Statuses_Clear;
 
-      Last_Message_Index       : Message_Index := 0;
-      In_Conditional_Skip_Mode : Boolean       := False;
-      Setup_Done               : Boolean       := False;
+      Last_Message_Index       : Message_Index      := 0;
+      In_Conditional_Skip_Mode : Boolean            := False;
+      Setup_Done               : Boolean            := False;
+      Last_Good_RX_Time        : Ada.Real_Time.Time := Clock;
    begin
       Init_Checker.Raise_If_Init_Not_Done;
 
@@ -216,7 +217,17 @@ package body Server_Communication is
                 | Firmware_Update_Done_Kind
             then
                raise Constraint_Error with "Server sent multiple setup messages.";
+            elsif RX_Message.Content.Kind in Regular_Step_Delta_List_Kind | Looping_Step_Delta_List_Kind
+              and then Step_Generator.Loop_Enqueued
+              and then Step_Generator.Enqueue_Would_Block (RX_Message.Content.Last_Index)
+            then
+               --  Force the server to resend so we can ensure that active communication is occurring during a loop
+               --  move.
+               Last_Good_RX_Time := Clock;
+               Step_Generator.Force_Start;
             else
+               Last_Good_RX_Time := Clock;
+
                Last_Message_Index := Last_Message_Index + 1;
 
                TX_Message.Content.Index := Last_Message_Index;
@@ -397,14 +408,19 @@ package body Server_Communication is
          Set_TX_Message_CRC;
          Transmit_TX_Message;
 
+         if Step_Generator.Loop_Enqueued and then Clock - Last_Good_RX_Time > Milliseconds (500) then
+            raise Timeout_Error with "No valid message from server for 0.5 seconds during loop move.";
+         end if;
+
          declare
             Error : DMA_Error_Code;
+            Loop_Mode : constant Boolean := Step_Generator.Loop_Enqueued;
          begin
             Poll_For_Completion
               (This           => Comms_UART_DMA_RX_Controller,
                Stream         => Comms_UART_DMA_RX_Stream,
                Expected_Level => Full_Transfer,
-               Timeout        => Seconds (5),
+               Timeout        => (if Loop_Mode then Milliseconds (500) else Seconds (5)),
                Result         => Error);
 
             --  TODO: Change this to allow for failures if anyone reports them, specifically UART framing errors.
@@ -412,7 +428,11 @@ package body Server_Communication is
                when DMA_Transfer_Error | DMA_Device_Error =>
                   raise DMA_Error with Error'Image;
                when DMA_Timeout_Error =>
-                  raise Timeout_Error with "No message from server for 5 seconds.";
+                  if Loop_Mode then
+                     raise Timeout_Error with "No valid message from server for 0.5 seconds during loop move.";
+                  else
+                     raise Timeout_Error with "No message from server for 5 seconds.";
+                  end if;
                when DMA_No_Error =>
                   null;
             end case;

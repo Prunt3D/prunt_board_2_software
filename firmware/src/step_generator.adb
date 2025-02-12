@@ -1,5 +1,5 @@
-with STM32.GPIO;     use STM32.GPIO;
-with HAL;            use HAL;
+with STM32.GPIO; use STM32.GPIO;
+with HAL;        use HAL;
 with Input_Switches;
 with Last_Chance_Handler;
 
@@ -118,6 +118,9 @@ package body Step_Generator is
            (if Step_Delta_Buffer_Loop_Enabled then
               Step_Delta_Buffer_Writer_Index + 1 /= Step_Delta_Buffer_Loop_Start_Index
             else True);
+         if Step_Delta_Buffer_Loop_Enabled then
+            raise Constraint_Error with "Enqueue blocking during loop move.";
+         end if;
       end loop;
 
       Step_Delta_Buffer (Step_Delta_Buffer_Writer_Index) := Steps;
@@ -174,10 +177,34 @@ package body Step_Generator is
    begin
       Init_Checker.Raise_If_Init_Not_Done;
 
+      if Buffer_Ran_Dry then
+         raise Empty_Buffer_Error with "Step generator ISR indicated that buffer is empty.";
+      end if;
+
       if Is_Idle and then Step_Delta_Buffer_Reader_Index /= Step_Delta_Buffer_Writer_Index then
          Is_Idle := False;
       end if;
    end Force_Start;
+
+   function Loop_Enqueued return Boolean is
+   begin
+      return Step_Delta_Buffer_Loop_Enabled;
+   end Loop_Enqueued;
+
+   function Enqueue_Would_Block (Number_Of_Steps : Step_Delta_List_Index) return Boolean is
+      Free_Spots_Normal : constant Step_Delta_Buffer_Index :=
+        Step_Delta_Buffer_Reader_Index - Step_Delta_Buffer_Writer_Index - 1;
+      Free_Spots_Loop   : constant Step_Delta_Buffer_Index :=
+        Step_Delta_Buffer_Loop_Start_Index - Step_Delta_Buffer_Writer_Index - 1;
+   begin
+      if Step_Delta_Buffer_Index (Number_Of_Steps) >= Free_Spots_Normal then
+         return True;
+      elsif Step_Delta_Buffer_Loop_Enabled and Step_Delta_Buffer_Index (Number_Of_Steps) >= Free_Spots_Loop then
+         return True;
+      else
+         return False;
+      end if;
+   end Enqueue_Would_Block;
 
    protected body Timer_Reload_Handler is
       procedure Master_Update_Handler is
