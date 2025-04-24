@@ -34,6 +34,7 @@ with GNAT.Serial_Communications;
 with Prunt.TMC_Types.TMC2240;
 with Ada.Containers.Generic_Constrained_Array_Sort;
 with System.Multiprocessors;
+with Ada.Strings.Unbounded;
 
 use type Prunt.TMC_Types.TMC2240.UART_Node_Address;
 
@@ -526,7 +527,11 @@ procedure Prunt_Board_2_Server is
       Reset_Position             => Reset_Position,
       Wait_Until_Idle            => Wait_Until_Idle,
       Shutdown                   => Shutdown,
-      Config_Path                => "./prunt_board_2.json");
+      Config_Path                => "./prunt_board_2.json",
+      Update_Check               =>
+        (Method       => Github,
+         Repository   => Ada.Strings.Unbounded.To_Unbounded_String ("prunt3d/prunt_board_2_software"),
+         Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.1.0")));
 
    procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence) is
    begin
