@@ -21,7 +21,7 @@ project Prunt_Board_2_Server is
    end Builder;
 
    package Binder is
-      for Switches ("Ada") use ("-Es"); --  Symbolic traceback
+      for Switches ("Ada") use ("-Es", "-static");
    end Binder;
 
    package Install is
