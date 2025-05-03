@@ -3,6 +3,7 @@ with GNAT.CRC32;
 with Ada.Strings.Bounded;
 with Ada.Characters.Latin_1;
 with Embedded_Resources;
+with Ada.Real_Time; use Ada.Real_Time;
 
 package body Communications is
 
@@ -47,6 +48,9 @@ package body Communications is
       Last_Received_Index : Message_Index := Message_Index'First;
 
       In_Safe_Stop_State : Boolean := True;
+
+      Last_Reported_Tach_Time     : Ada.Real_Time.Time := Clock;
+      Last_Reported_Tach_Counters : Reported_Tach_Counters := (others => 0);
 
       package MCU_Log_Buffer_Strings is new Ada.Strings.Bounded.Generic_Bounded_Length (Max => 5_000);
 
@@ -313,9 +317,29 @@ package body Communications is
                TMC_Reply_Waiting := True;
             end if;
 
-            --  for F in Fan_Name loop
-            --     Log (F'Image & Reply.Content.Tachs (F)'Image);
-            --  end loop;
+            declare
+               use Prunt;
+               Time_Now : Ada.Real_Time.Time := Clock;
+               Time_Since_Last_Tach_Report : Ada.Real_Time.Time_Span := Time_Now - Last_Reported_Tach_Time;
+            begin
+               if Time_Since_Last_Tach_Report >= Seconds (1) then
+                  for F in Fan_Name loop
+                     declare
+                        Tach_Value : Dimensionless :=
+                          Dimensionless (Reply.Content.Tachs (F)) - Dimensionless (Last_Reported_Tach_Counters (F));
+                     begin
+                        if Tach_Value < 0.0 then
+                           Tach_Value := Tach_Value + Dimensionless (Tach_Counter'Last);
+                           --  We use floats here to avoid issues if the Tach_Counter range is changes later, therefore
+                           --  we can not use the mod operator.
+                        end if;
+                        Report_Tachometer_Frequency (F, Tach_Value / (1.0 * s));
+                     end;
+                  end loop;
+                  Last_Reported_Tach_Counters := Reply.Content.Tachs;
+                  Last_Reported_Tach_Time := Time_Now;
+               end if;
+            end;
          end if;
 
          Last_Received_Index := Reply.Content.Index;

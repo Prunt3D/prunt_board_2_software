@@ -98,19 +98,22 @@ procedure Prunt_Board_2_Server is
 
    procedure Report_Input_Switch_State (Switch : Messages.Input_Switch_Name; State : Messages.Input_Switch_State);
 
+   procedure Report_Tachometer_Frequency (Fan : Messages.Fan_Name; Freq : Prunt.Frequency);
+
    procedure Log (Message : String);
 
    procedure Prompt_For_Update;
 
    pragma Warnings (Off, "cannot call * before body seen");
    package My_Communications is new Communications
-     (Report_Error              => Report_Error,
-      Report_Temperature        => Report_Temperature,
-      Report_MCU_Temperature    => Report_MCU_Temperature,
-      Report_Heater_Power       => Report_Heater_Power,
-      Report_Input_Switch_State => Report_Input_Switch_State,
-      Prompt_For_Update         => Prompt_For_Update,
-      Log                       => Log,
+     (Report_Error                => Report_Error,
+      Report_Temperature          => Report_Temperature,
+      Report_MCU_Temperature      => Report_MCU_Temperature,
+      Report_Heater_Power         => Report_Heater_Power,
+      Report_Input_Switch_State   => Report_Input_Switch_State,
+      Report_Tachometer_Frequency => Report_Tachometer_Frequency,
+      Prompt_For_Update           => Prompt_For_Update,
+      Log                         => Log,
       Runner_CPU => System.Multiprocessors.CPU_Range'Value (Argument_Value ("--communications-cpu=", "0")));
    pragma Warnings (On, "cannot call * before body seen");
 
@@ -557,6 +560,11 @@ procedure Prunt_Board_2_Server is
    begin
       My_Controller.Report_Input_Switch_State (Switch, (if State = High then High_State else Low_State));
    end Report_Input_Switch_State;
+
+   procedure Report_Tachometer_Frequency (Fan : Messages.Fan_Name; Freq : Prunt.Frequency) is
+   begin
+      My_Controller.Report_Tachometer_Frequency (Fan, Freq);
+   end Report_Tachometer_Frequency;
 
    procedure Prompt_For_Update is
    begin

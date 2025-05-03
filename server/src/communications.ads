@@ -2,6 +2,7 @@ with GNAT.Serial_Communications;
 with Messages; use Messages;
 with Ada.Exceptions;
 with System.Multiprocessors;
+with Prunt;
 
 generic
    with procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence);
@@ -9,6 +10,7 @@ generic
    with procedure Report_MCU_Temperature (Temp : Fixed_Point_Celsius);
    with procedure Report_Heater_Power (Heater : Heater_Name; Power : Fixed_Point_PWM_Scale);
    with procedure Report_Input_Switch_State (Switch : Input_Switch_Name; State : Input_Switch_State);
+   with procedure Report_Tachometer_Frequency (Fan : Fan_Name; Freq : Prunt.Frequency);
    with procedure Prompt_For_Update;
    with procedure Log (Message : String);
    Runner_CPU : System.Multiprocessors.CPU_Range;
