@@ -23,7 +23,6 @@ with Prunt;             use Prunt;
 with Messages;          use Messages;
 with Ada.Command_Line;  use Ada.Command_Line;
 with Prunt.Thermistors; use Prunt.Thermistors;
-with Prunt.Heaters;     use Prunt.Heaters;
 with Prunt.Controller;
 with Ada.Text_IO;
 with Ada.Exceptions;
@@ -197,7 +196,7 @@ procedure Prunt_Board_2_Server is
       My_Communications.Runner.Send_Message (Message);
    end Setup;
 
-   procedure Reconfigure_Heater (Heater : Heater_Name; Params : Prunt.Heaters.Heater_Parameters) is
+   procedure Reconfigure_Heater (Heater : Heater_Name; Params : Prunt.Heater_Parameters) is
       Message : Message_From_Server_Content :=
         (Kind           => Heater_Reconfigure_Kind,
          Index          => <>,
@@ -207,14 +206,14 @@ procedure Prunt_Board_2_Server is
          Heater_Params  => <>);
    begin
       case Params.Kind is
-         when Prunt.Heaters.Disabled_Kind =>
+         when Prunt.Disabled_Kind =>
             Message.Heater_Params :=
               (Kind                       => Disabled_Kind,
                Check_Max_Cumulative_Error => Fixed_Point_Celsius (Params.Check_Max_Cumulative_Error),
                Check_Gain_Time            => Fixed_Point_Seconds (Params.Check_Gain_Time),
                Check_Minimum_Gain         => Fixed_Point_Celsius (Params.Check_Minimum_Gain),
                Check_Hysteresis           => Fixed_Point_Celsius (Params.Check_Hysteresis));
-         when Prunt.Heaters.PID_Kind =>
+         when Prunt.PID_Kind =>
             Message.Heater_Params :=
               (Kind                       => PID_Kind,
                Check_Max_Cumulative_Error => Fixed_Point_Celsius (Params.Check_Max_Cumulative_Error),
@@ -224,7 +223,7 @@ procedure Prunt_Board_2_Server is
                Proportional_Scale         => Fixed_Point_PID_Parameter (Params.Proportional_Scale),
                Integral_Scale             => Fixed_Point_PID_Parameter (Params.Integral_Scale),
                Derivative_Scale           => Fixed_Point_PID_Parameter (Params.Derivative_Scale));
-         when Prunt.Heaters.Bang_Bang_Kind =>
+         when Prunt.Bang_Bang_Kind =>
             Message.Heater_Params :=
               (Kind                       => Bang_Bang_Kind,
                Check_Max_Cumulative_Error => Fixed_Point_Celsius (Params.Check_Max_Cumulative_Error),
@@ -232,7 +231,7 @@ procedure Prunt_Board_2_Server is
                Check_Minimum_Gain         => Fixed_Point_Celsius (Params.Check_Minimum_Gain),
                Check_Hysteresis           => Fixed_Point_Celsius (Params.Check_Hysteresis),
                Bang_Bang_Hysteresis       => Fixed_Point_Celsius (Params.Bang_Bang_Hysteresis));
-         when Prunt.Heaters.PID_Autotune_Kind =>
+         when Prunt.PID_Autotune_Kind =>
             Message.Heater_Params :=
               (Kind                       => PID_Autotune_Kind,
                Check_Max_Cumulative_Error => Fixed_Point_Celsius (Params.Check_Max_Cumulative_Error),
@@ -345,8 +344,12 @@ procedure Prunt_Board_2_Server is
             Total_Offset : constant Stepper_Position :=
               (Command.Pos - Last_Commanded_Position) * Dimensionless (Loop_Move_Multiplier);
          begin
+            Ada.Text_IO.Put_Line ("Command.Pos: " & Command.Pos'Image);
+            Ada.Text_IO.Put_Line ("Last_Commanded_Position: " & Last_Commanded_Position'Image);
+            Ada.Text_IO.Put_Line ("Total_Offset: " & Total_Offset'Image);
+
             for S in Stepper_Name loop
-               if Total_Offset (S) > 0.0 and Total_Offset (S) < 20.0 then
+               if abs (Total_Offset (S)) > 0.0 and abs (Total_Offset (S)) < 20.0 then
                   raise Constraint_Error with "Loop move direction vector error potentially greater than 5%.";
                end if;
             end loop;
@@ -482,7 +485,7 @@ procedure Prunt_Board_2_Server is
       Reply := (for I in Reply'Range => Prunt.TMC_Types.TMC2240.UART_Byte (TMC_Reply (9 - I)));
    end TMC_Read;
 
-   procedure Autotune_Heater (Heater : Heater_Name; Params : Prunt.Heaters.Heater_Parameters) is
+   procedure Autotune_Heater (Heater : Heater_Name; Params : Prunt.Heater_Parameters) is
       Reply : Message_From_Client_Content;
    begin
       Reconfigure_Heater (Heater, Params);
@@ -499,37 +502,42 @@ procedure Prunt_Board_2_Server is
       end loop;
    end Autotune_Heater;
 
-   procedure Shutdown is
+   procedure Reset is
    begin
-      My_Communications.Runner.Shutdown;
-   end Shutdown;
+      My_Communications.Runner.Restart;
+      My_Communications.Runner.Init;
+   end Reset;
 
    Stepper_UART_Address : constant array (Stepper_Name) of Prunt.TMC_Types.TMC2240.UART_Node_Address :=
      (Stepper_1 => 6, Stepper_2 => 4, Stepper_3 => 3, Stepper_4 => 2, Stepper_5 => 5, Stepper_6 => 1);
+
+   Max_Fan_Frequency : constant Frequency := 50_000.0 * hertz;
 
    package My_Controller is new Prunt.Controller
      (Generic_Types              => My_Controller_Generic_Types,
       Stepper_Hardware           =>
         (for I in Messages.Stepper_Name =>
-           (Kind                   => TMC2240_UART_Kind,
-            Enable_Stepper         => Enable_Stepper'Access,
-            Disable_Stepper        => Disable_Stepper'Access,
-            Double_Edge_Stepping   => True,
-            TMC2240_UART_Address   => Stepper_UART_Address (I),
-            TMC2240_UART_Write     => TMC_Write'Access,
-            TMC2240_UART_Read      => TMC_Read'Access)),
+           (Kind                 => TMC2240_UART_Kind,
+            Double_Edge_Stepping => True,
+            TMC2240_UART_Address => Stepper_UART_Address (I),
+            TMC2240_UART_Write   => TMC_Write'Access,
+            TMC2240_UART_Read    => TMC_Read'Access)),
+      Fan_Hardware               =>
+        (others =>
+           (Kind                            => Fixed_Switching_Kind,
+            Reconfigure_Fixed_Switching_Fan => Reconfigure_Fan'Access,
+            Maximum_PWM_Frequency           => Max_Fan_Frequency)),
       Interpolation_Time         => 60_000.0 / 1_200_000_000.0 * s,
       Loop_Interpolation_Time    => 60_000.0 / 1_200_000_000.0 * s,
       Setup                      => Setup,
       Reconfigure_Heater         => Reconfigure_Heater,
-      Reconfigure_Fan            => Reconfigure_Fan,
       Autotune_Heater            => Autotune_Heater,
       Setup_For_Loop_Move        => Setup_For_Loop_Move,
       Setup_For_Conditional_Move => Setup_For_Conditional_Move,
       Enqueue_Command            => Enqueue_Command,
       Reset_Position             => Reset_Position,
       Wait_Until_Idle            => Wait_Until_Idle,
-      Shutdown                   => Shutdown,
+      Reset                      => Reset,
       Config_Path                => "./prunt_board_2.json",
       Update_Check               =>
         (Method       => Github,
@@ -581,7 +589,9 @@ begin
         "Usage: " & Ada.Command_Line.Command_Name & " --serial-port=<serial port path> [--reboot-to-kalico]";
    end if;
 
-   My_Communications.Runner.Init (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")));
+   My_Communications.Runner.Open_Port
+     (GNAT.Serial_Communications.Port_Name (Argument_Value ("--serial-port=", "")));
+   My_Communications.Runner.Init;
 
    for Arg in 1 .. Argument_Count loop
       if Argument (Arg) = "--reboot-to-kalico" then
@@ -590,14 +600,19 @@ begin
              Index          => <>,
              TMC_Write_Data => (others => 0),
              TMC_Read_Data  => (others => 0)));
-         My_Communications.Runner.Shutdown;
+         My_Communications.Runner.Restart;
          GNAT.OS_Lib.OS_Abort;
       end if;
    end loop;
 
+   for S in Messages.Stepper_Name loop
+      --  TOFF is used by prunt to enable and disable steppers.
+      Enable_Stepper (S);
+   end loop;
+
    My_Controller.Run;
 
-   My_Communications.Runner.Shutdown;
+   My_Communications.Runner.Restart;
    GNAT.OS_Lib.OS_Abort;
 exception
    when E : others =>

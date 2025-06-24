@@ -26,11 +26,12 @@ package Communications is
    task Runner with
      CPU => Runner_CPU
    is
-      entry Init (Port_Name : GNAT.Serial_Communications.Port_Name);
+      entry Open_Port (Port_Name : GNAT.Serial_Communications.Port_Name);
+      entry Init;
       entry Send_Message (Content : Message_From_Server_Content);
       entry Send_Message_And_Wait_For_Reply
         (Content : Message_From_Server_Content; Reply : out Message_From_Client_Content);
-      entry Shutdown;
+      entry Restart;
    end Runner;
 
 private

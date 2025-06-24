@@ -43,6 +43,8 @@ package body Communications is
    end TMC_IO;
 
    task body Runner is
+      Already_Tried_Update : Boolean := False;
+
       Port : GNAT.Serial_Communications.Serial_Port;
 
       Last_Received_Index : Message_Index := Message_Index'First;
@@ -346,23 +348,30 @@ package body Communications is
       end Send_And_Handle_Reply;
 
    begin
-      accept Init (Port_Name : GNAT.Serial_Communications.Port_Name) do
-         GNAT.Serial_Communications.Open (Port, Port_Name);
-         GNAT.Serial_Communications.Set
-           (Port      => Port,
-            Rate      => GNAT.Serial_Communications.B75,
-            Bits      => GNAT.Serial_Communications.CS8,
-            Stop_Bits => GNAT.Serial_Communications.One,
-            Parity    => GNAT.Serial_Communications.None,
-            Block     => False,
-            Local     => True,
-            Flow      => GNAT.Serial_Communications.None,
-            Timeout   => 10.0);
-         --  Requesting a baud rate of 75 actually sets the board to 6M.
+      <<Restart_Point>>
 
-         declare
-            Already_Tried_Update : Boolean := False;
-         begin
+      Last_Received_Index := Message_Index'First;
+      In_Safe_Stop_State := True;
+      Last_Reported_Tach_Time := Clock;
+      Last_Reported_Tach_Counters := (others => 0);
+
+      begin
+         accept Open_Port (Port_Name : GNAT.Serial_Communications.Port_Name) do
+            GNAT.Serial_Communications.Open (Port, Port_Name);
+            GNAT.Serial_Communications.Set
+              (Port      => Port,
+               Rate      => GNAT.Serial_Communications.B75,
+               Bits      => GNAT.Serial_Communications.CS8,
+               Stop_Bits => GNAT.Serial_Communications.One,
+               Parity    => GNAT.Serial_Communications.None,
+               Block     => False,
+               Local     => True,
+               Flow      => GNAT.Serial_Communications.None,
+               Timeout   => 10.0);
+         --  Requesting a baud rate of 75 actually sets the board to 6M.
+         end Open_Port;
+
+         accept Init do
             loop
                declare
                   Byte       : Stream_Element_Array (1 .. 1);
@@ -467,13 +476,13 @@ package body Communications is
                   end if;
                end;
             end loop;
-         exception
-            when E : others =>
-               Flush_MCU_Log_Buffer;
-               Report_Error (E);
-               accept Shutdown;
-         end;
-      end Init;
+         end Init;
+      exception
+         when E : others =>
+            Flush_MCU_Log_Buffer;
+            Report_Error (E);
+            raise;
+      end;
 
       loop
          declare
@@ -495,8 +504,8 @@ package body Communications is
                   Reply := Received_Message.Content;
                end Send_Message_And_Wait_For_Reply;
             or
-               accept Shutdown;
-               exit;
+               accept Restart;
+               goto Restart_Point;
             or when Last_Received_Index > Message_Index'First and In_Safe_Stop_State =>
                delay 0.02;
                Message_To_Send.Content :=
@@ -511,12 +520,12 @@ package body Communications is
                   --  TODO: Get a reply here before restarting instead of just waiting for a timeout.
                   Report_Error (E);
                end if;
-               accept Shutdown;
-               exit;
+               accept Restart;
+               raise;
             when E : others =>
                Report_Error (E);
-               accept Shutdown;
-               exit;
+               accept Restart;
+               raise;
          end;
       end loop;
    end Runner;
