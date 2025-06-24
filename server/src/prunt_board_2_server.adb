@@ -542,7 +542,7 @@ procedure Prunt_Board_2_Server is
       Update_Check               =>
         (Method       => Github,
          Repository   => Ada.Strings.Unbounded.To_Unbounded_String ("prunt3d/prunt_board_2_software"),
-         Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.3.0")));
+         Expected_Tag => Ada.Strings.Unbounded.To_Unbounded_String ("v1.4.0")));
 
    procedure Report_Error (Occurrence : Ada.Exceptions.Exception_Occurrence) is
    begin
